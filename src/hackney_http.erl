@@ -340,8 +340,8 @@ parse_body(St=#hparser{body_state=waiting, te=TE, clen=Length,
 						{stream, fun te_identity/2, {0, Length},
 						 fun ce_identity/1}})
 	end;
-parse_body(St=#hparser{body_state=done}) ->
-	{done, St};
+parse_body(#hparser{body_state=done, state=done}) ->
+	done;
 parse_body(St=#hparser{buffer=Buffer, body_state={stream, _, _, _}})
 		when Buffer =/= <<>> ->
 	transfer_decode(Buffer, St#hparser{buffer= <<>>});
