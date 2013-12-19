@@ -5,6 +5,7 @@
 %%%
 %%% Copyright (c) 2012-2013 Benoît Chesneau <benoitc@e-engura.org>
 %%% Copyright (c) 2012 Ilya Khlopotov <ilya.khlopotov@gmail.com>
+%%% Copyright (c) 2011, Anthony Ramine <nox@dev-extend.eu>
 %%%
 
 %% @doc module to encode/decode multipart
