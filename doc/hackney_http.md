@@ -57,8 +57,7 @@ connections, for a proxy...
 - `{ok, binary(), parser()}`: on body, when a chunk has been
 parsed. To continue the parsing you must call
 `hackney_http:execute/1` with the given `parser()`.
-- `done`: when the parsing is done
-- `{done, binary()}`: on body, when no more need to be parsing. The binary
+- `{done, binary()}`: when the parsing is done. The binary
 given correpond to the non parsed part of the internal buffer.
 - `{error, term{}}`: when an error happen
 <a name="types"></a>
@@ -73,7 +72,7 @@ given correpond to the non parsed part of the internal buffer.
 
 
 <pre><code>
-body_result() = {more, <a href="#type-parser">parser()</a>, binary()} | {ok, binary(), <a href="#type-parser">parser()</a>} | {done, binary()} | done
+body_result() = {more, <a href="#type-parser">parser()</a>, binary()} | {ok, binary(), <a href="#type-parser">parser()</a>} | {done, binary()}
 </code></pre>
 
 
@@ -236,7 +235,7 @@ Properties are:
 - `buffer`: internal buffer of the parser (non parsed)
 - `state`: the current state (on_status, on_header, on_body, done)
 - `version`: HTTP version
-- `content_lenght`: content length header if any
+- `content_length`: content length header if any
 - `transfer_encoding`: transfer encoding header if any
 - `content_type`: content type header if any
 - `location`: location header if any

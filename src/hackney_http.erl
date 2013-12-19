@@ -127,7 +127,7 @@ parser(Options) ->
 %%  - `buffer': internal buffer of the parser (non parsed)
 %%  - `state': the current state (on_status, on_header, on_body, done)
 %%  - `version': HTTP version
-%%  - `content_lenght': content length header if any
+%%  - `content_length': content length header if any
 %%  - `transfer_encoding': transfer encoding header if any
 %%  - `content_type': content type header if any
 %%  - `location': location header if any
