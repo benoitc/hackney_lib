@@ -55,7 +55,7 @@
 
 -export([parser/0, parser/1]).
 -export([execute/1, execute/2]).
-
+-export([get/2]).
 
 -record(hparser, {type=auto,
                   max_line_length=4096,
@@ -124,7 +124,21 @@ parser() ->
 parser(Options) ->
     parse_options(Options, #hparser{}).
 
-
+%% @doc retrieve a parser property.
+%% Properties are:
+%%  - `buffer': internal buffer of the parser (non parsed)
+%%  - `state': the current state (on_status, on_header, on_body, done)
+%%  - `version': HTTP version
+%%  - `content_lenght': content length header if any
+%%  - `transfer_encoding': transfer encoding header if any
+%%  - `content_type': content type header if any
+%%  - `location': location header if any
+%%  - `connection': connection header if any.
+-spec get(parser(), atom() | [atom()]) -> any().
+get(Parser, Props) when is_list(Props) ->
+    [get_property(P, Parser) || P <- Props];
+get(Parser, Prop) ->
+    get_property(Prop, Parser).
 
 %% @doc Execute the parser with the current buffer.
 -spec execute(#hparser{}) -> parser_result().
@@ -314,7 +328,7 @@ parse_trailers(St, Acc) ->
     end.
 
 parse_body(St=#hparser{body_state=waiting, te=TE, clen=Length,
-                           method=Method}) ->
+                       method=Method}) ->
 	case TE of
 		<<"chunked">> ->
 			parse_body(St#hparser{body_state=
@@ -485,3 +499,22 @@ parse_options([{max_empty_lines, MaxEmptyLines} | Rest], St) ->
     parse_options(Rest, St#hparser{max_empty_lines=MaxEmptyLines});
 parse_options([_ | Rest], St) ->
     parse_options(Rest, St).
+
+get_property(buffer, #hparser{buffer=Buffer}) ->
+    Buffer;
+get_property(state, #hparser{state=State}) ->
+    State;
+get_property(version, #hparser{version=Version}) ->
+    Version;
+get_property(method, #hparser{method=Method}) ->
+    Version;
+get_property(transfer_encoding, #hparser{te=TE}) ->
+    CLen;
+get_property(content_length, #hparser{clen=CLen}) ->
+    CLen;
+get_property(connection, #hparser{connection=Connection}) ->
+    Connection;
+get_property(content_type, #hparser{ctype=Ctype}) ->
+    CType;
+get_property(location, #hparser{location=Location}) ->
+    Location.
