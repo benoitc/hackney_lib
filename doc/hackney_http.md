@@ -9,7 +9,7 @@
 
 HTTP parser in pure Erlang
 This parser is able to parse HTTP responses and requests in a
-streaming manner.
+streaming fashion.
 
 <a name="description"></a>
 

@@ -8,7 +8,7 @@
 %%%
 %%% @doc HTTP parser in pure Erlang
 %%% This parser is able to parse HTTP responses and requests in a
-%%% streaming manner. If not set it will be autodetect the type of
+%%% streaming fashion. If not set it will be autodetect the type of
 %%% binary parsed, if it's a request or a response.
 %%%
 %%% Internally it is keeping a buffer for intermediary steps but don't

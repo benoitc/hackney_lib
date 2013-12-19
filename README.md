@@ -29,7 +29,7 @@ Coming:
 #### Useful modules are:
 
 - [`hackney_http`](http://github.com/benoitc/hackney_lib/blob/master/doc/hackney_http.md): HTTP parser in pure Erlang. This parser is able
-to parse HTTP responses and requests in a streaming manner. If not set
+to parse HTTP responses and requests in a streaming fashion. If not set
 it will be autodetect if it's a request or a response if needed.
 
 - [`hackney_headers`](http://github.com/benoitc/hackney_lib/blob/master/doc/hackney_headers.md) Module to manipulate HTTP headers
