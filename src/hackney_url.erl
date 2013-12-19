@@ -4,6 +4,8 @@
 %%% See the NOTICE for more information.
 %%%
 %%% Copyright (c) 2012-2013 Benoît Chesneau <benoitc@e-engura.org>
+%%% Copyright (c) 2011, Magnus Klaar <magnus.klaar@gmail.com>
+%%%
 
 %% @doc module to manage urls.
 
