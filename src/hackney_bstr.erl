@@ -5,12 +5,7 @@
 %%%
 %%% Copyright (c) 2012-2013 Benoît Chesneau <benoitc@e-engura.org>
 %%%
--module(hackney_util).
-
--export([require/1]).
--export([maybe_apply_defaults/2]).
-
--export([is_ipv6/1]).
+-module(hackney_bstr).
 
 -export([to_binary/1,
          to_lower/1, to_upper/1,
@@ -28,51 +23,6 @@
          word/2]).
 
 -export([content_type/1]).
-
--include("hackney.hrl").
-
-%% @doc Start the given applications if they were not already started.
--spec require(list(module())) -> ok.
-require([]) ->
-	ok;
-require([App|Rest]) ->
-	case application:start(App) of
-		ok -> ok;
-		{error, {already_started, App}} -> ok
-	end,
-	require(Rest).
-
-maybe_apply_defaults([], Options) ->
-    Options;
-maybe_apply_defaults([OptName | Rest], Options) ->
-    case proplists:is_defined(OptName, Options) of
-        true ->
-            maybe_apply_defaults(Rest, Options);
-        false ->
-            {ok, Default} = application:get_env(hackney, OptName),
-            maybe_apply_defaults(Rest, [{OptName, Default} | Options])
-    end.
-
-is_ipv6(Host) ->
-    case inet_parse:address(Host) of
-        {ok, {_, _, _, _, _, _, _, _}} ->
-            true;
-        {ok, {_, _, _, _}} ->
-            false;
-        _ ->
-            case inet:getaddr(Host, inet) of
-                {ok, _} ->
-                    false;
-                _ ->
-                    case inet:getaddr(Host, inet6) of
-                        {ok, _} ->
-                            true;
-                        _ ->
-                            false
-                    end
-            end
-    end.
-
 
 to_binary(V) when is_list(V) ->
     list_to_binary(V);

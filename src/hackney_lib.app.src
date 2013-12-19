@@ -1,0 +1,12 @@
+%% -*- tab-width: 4;erlang-indent-level: 4;indent-tabs-mode: nil -*-
+%% ex: ft=erlang ts=4 sw=4 et
+
+{application, hackney_lib,
+    [
+        {description, "Web toolkit"},
+        {vsn, "0.1.0"},
+        {registered, []},
+        {applications, [mimetypes]},
+        {included_applications, []},
+        {env, []}
+]}.

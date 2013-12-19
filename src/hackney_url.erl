@@ -3,9 +3,7 @@
 %%% This file is part of hackney released under the Apache 2 license.
 %%% See the NOTICE for more information.
 %%%
-%%% Copyright (c) 2011-2012, Loïc Hoguin <essen@ninenines.eu>
 %%% Copyright (c) 2012-2013 Benoît Chesneau <benoitc@e-engura.org>
-%%%
 
 %% @doc module to manage urls.
 
@@ -202,7 +200,7 @@ unhex(_) -> error.
 %% @equiv urlencode(Bin, [])
 -spec urlencode(binary()) -> binary().
 urlencode(Bin) ->
-	urlencode(hackney_util:to_binary(Bin), []).
+	urlencode(hackney_bstr:to_binary(Bin), []).
 
 %% @doc URL encode a string binary.
 %% The `noplus' option disables the default behaviour of quoting space
@@ -262,7 +260,7 @@ qs(KVs) ->
    qs(KVs, []).
 
 qs([], Acc) ->
-    hackney_util:join(lists:reverse(Acc), <<"&">>);
+    hackney_bstr:join(lists:reverse(Acc), <<"&">>);
 qs([{K, V}|R], Acc) ->
     K1 = urlencode(K),
     V1 = urlencode(V),
@@ -281,7 +279,7 @@ make_url(Url, Path, Query) when is_binary(Path) ->
 make_url(Url, PathParts, Query) when is_binary(Query) ->
     %% create path
     PathParts1 = [fix_path(P) || P <- PathParts, P /= "/" orelse P /= <<"/">>],
-    Path = hackney_util:join([<<>> | PathParts1], <<"/">>),
+    Path = hackney_bstr:join([<<>> | PathParts1], <<"/">>),
 
     %% initialise the query
     Query1 = case Query of

@@ -7,7 +7,7 @@
 %%% Copyright (c) 2012 Ilya Khlopotov <ilya.khlopotov@gmail.com>
 %%%
 
-%% @doc module to encode/decode forms
+%% @doc module to encode/decode multipart
 
 -module(hackney_multipart).
 
@@ -55,7 +55,7 @@ boundary() ->
     <<"---------------------------", Unique/binary>>.
 
 encode({Id, {file, Name, Content}}, Boundary) ->
-    CType = hackney_util:content_type(Name),
+    CType = hackney_bstr:content_type(Name),
     encode({Id, {file, Name, Content, CType}}, Boundary);
 encode({Id, {file, Name, Content, CType}}, Boundary) ->
     Field = field(Id),
@@ -65,7 +65,7 @@ encode({Id, {file, Name, Content, CType}}, Boundary) ->
             Field/binary, "\"; filename=\"", Name/binary, "\"">>,
         <<"Content-Type: ", CType/binary >>,
         <<>>, Content, <<>>],
-    hackney_util:join(Parts, <<"\r\n">>);
+    hackney_bstr:join(Parts, <<"\r\n">>);
 encode({Id, Value}, Boundary) ->
     Field = field(Id),
     Parts = [
@@ -73,15 +73,15 @@ encode({Id, Value}, Boundary) ->
         <<"Content-Disposition: form-data; name=\"", Field/binary, "\"">>,
         <<"Content-Type: application/octet-stream">>,
         <<>>, Value, <<>>],
-    hackney_util:join(Parts, <<"\r\n">>).
+    hackney_bstr:join(Parts, <<"\r\n">>).
 
 mp_header(Field, FileName, CType, Boundary) ->
-    FileName1 = hackney_util:to_binary(FileName),
+    FileName1 = hackney_bstr:to_binary(FileName),
     Parts = [
             <<"--", Boundary/binary>>,
             <<"Content-Disposition: form-data; name=\"", Field/binary, "\"; filename=\"", FileName1/binary, "\"">>,
             <<"Content-Type: ", CType/binary >>, <<>>, <<>>],
-    hackney_util:join(Parts, <<"\r\n">>).
+    hackney_bstr:join(Parts, <<"\r\n">>).
 
 field(V) when is_list(V) ->
     list_to_binary(V);
@@ -215,7 +215,7 @@ parse_boundary_eol(Bin, Pattern) ->
             % End of line found, remove optional whitespace.
             <<_:CrlfStart/binary, Rest/binary>> = Bin,
             Fun = fun (Rest2) -> parse_boundary_crlf(Rest2, Pattern) end,
-            hackney_util:whitespace(Rest, Fun);
+            hackney_bstr:whitespace(Rest, Fun);
         nomatch ->
             % CRLF not found in the given binary.
             RestStart = max(byte_size(Bin) - 1, 0),

@@ -6,6 +6,9 @@
 %%% Copyright (c) 2012-2013 Benoît Chesneau <benoitc@e-engura.org>
 %%% Copyright (c) 2011-2013, Loïc Hoguin <essen@ninenines.eu>
 %%% Copyright (c) 2011, Anthony Ramine <nox@dev-extend.eu>
+
+%% @doc module to manipulate HTT headers
+%%
 -module(hackney_headers).
 
 -export([new/0, new/1,
@@ -33,9 +36,10 @@ new(Headers) when is_list(Headers) ->
                 insert(K, V, D)
         end, dict:new(), Headers).
 
+%% @doc extend the headers with a new list of `{Key, Value}` pair.
 update(Headers, KVs) ->
     lists:foldl(fun({K,_V}=KV, D) ->
-                dict:store(hackney_util:to_lower(K), KV, D)
+                dict:store(hackney_bstr:to_lower(K), KV, D)
         end, Headers, KVs).
 
 %% convert the header to a list
@@ -49,7 +53,7 @@ get_value(Key, Headers) ->
     get_value(Key, Headers, undefined).
 
 get_value(Key, Headers, Default) ->
-    case dict:find(hackney_util:to_lower(Key), Headers) of
+    case dict:find(hackney_bstr:to_lower(Key), Headers) of
         {ok, {_K, V}} ->
             V;
         _ ->
@@ -58,13 +62,13 @@ get_value(Key, Headers, Default) ->
 
 %% @doc store the pair into the headers, replacing any pre-existing key.
 store(Key, Value, Headers) ->
-    dict:store(hackney_util:to_lower(Key), {Key, Value}, Headers).
+    dict:store(hackney_bstr:to_lower(Key), {Key, Value}, Headers).
 
 
 %% @doc Insert the pair into the headers, merging with any pre-existing key.
 %% A merge is done with Value = V0 ++ ", " ++ V1.
 insert(Key, Value, Headers) ->
-    Key1 = hackney_util:to_lower(Key),
+    Key1 = hackney_bstr:to_lower(Key),
     Value1 = case dict:find(Key1, Headers) of
         {ok, {_, OldValue}} ->
             << OldValue/binary, ", ", Value/binary >>;
@@ -75,7 +79,7 @@ insert(Key, Value, Headers) ->
 
 %% @doc Delete the header corresponding to key if it is present.
 delete(Key, Headers) ->
-    dict:erase(hackney_util:to_lower(Key), Headers).
+    dict:erase(hackney_bstr:to_lower(Key), Headers).
 
 %% @doc fold the list of headers
 fold(Fun, Acc0, Headers) ->
@@ -106,30 +110,30 @@ parse(Name, Headers) ->
 parse(Name = <<"accept">>, Headers, Default) ->
     parse(Name, Headers, Default,
           fun (Value) ->
-                hackney_util:list(Value, fun media_range/2)
+                hackney_bstr:list(Value, fun media_range/2)
         end);
 parse(Name = <<"accept-charset">>, Headers, Default) ->
     parse(Name, Headers, Default,
           fun (Value) ->
-                hackney_util:nonempty_list(Value, fun conneg/2)
+                hackney_bstr:nonempty_list(Value, fun conneg/2)
         end);
 parse(Name = <<"accept-encoding">>, Headers, Default) ->
     parse(Name, Headers, Default,
           fun (Value) ->
-                hackney_util:list(Value, fun conneg/2)
+                hackney_bstr:list(Value, fun conneg/2)
         end);
 parse(Name = <<"accept-language">>, Headers, Default) ->
     parse(Name, Headers, Default,
           fun (Value) ->
-                hackney_util:nonempty_list(Value, fun language_range/2)
+                hackney_bstr:nonempty_list(Value, fun language_range/2)
         end);
 parse(Name = <<"authorization">>, Headers, Default) ->
     parse(Name, Headers, Default,
           fun (Value) ->
-                hackney_utils:token_ci(Value, fun authorization/2)
+                hackney_bstrs:token_ci(Value, fun authorization/2)
         end);
 parse(Name = <<"content-length">>, Headers, Default) ->
-    parse(Name, Headers, Default, fun hackney_util:digits/1);
+    parse(Name, Headers, Default, fun hackney_bstr:digits/1);
 parse(Name = <<"content-type">>, Headers, Default) ->
     parse(Name, Headers, Default, fun content_type/1);
 parse(Name = <<"cookie">>, Headers, Default) ->
@@ -137,7 +141,7 @@ parse(Name = <<"cookie">>, Headers, Default) ->
 parse(Name = <<"expect">>, Headers, Default) ->
     parse(Name, Headers, Default,
           fun (Value) ->
-                hackney_util:nonempty_list(Value, fun expectation/2)
+                hackney_bstr:nonempty_list(Value, fun expectation/2)
         end);
 parse(Name, Headers, Default)
         when Name =:= <<"if-match">>;
@@ -154,7 +158,7 @@ parse(Name, Headers, Default)
         Name =:= <<"x-forwarded-for">> ->
     parse(Name, Headers, Default,
           fun (Value) ->
-                hackney_util:nonempty_list(Value, fun hackney_util:token/2)
+                hackney_bstr:nonempty_list(Value, fun hackney_bstr:token/2)
         end);
 %% @todo Extension parameters.
 parse(Name, Headers, Default)
@@ -162,10 +166,10 @@ parse(Name, Headers, Default)
         Name =:= <<"upgrade">> ->
     parse(Name, Headers, Default,
           fun (Value) ->
-                hackney_util:nonempty_list(Value, fun hackney_util:token_ci/2)
+                hackney_bstr:nonempty_list(Value, fun hackney_bstr:token_ci/2)
         end);
 parse(Name = <<"sec-websocket-extensions">>, Headers, Default) ->
-    parse(Name, Headers, Default, fun hackney_util:parameterized_tokens/1);
+    parse(Name, Headers, Default, fun hackney_bstr:parameterized_tokens/1);
 parse(Name, Headers, Default) ->
     get_value(Name, Headers, Default).
 
@@ -190,13 +194,13 @@ parse(Name, Headers, Default, Fun) ->
 content_type(Data) ->
     media_type(Data,
                fun (Rest, Type, SubType) ->
-                hackney_util:params(Rest,
+                hackney_bstr:params(Rest,
                        fun (<<>>, Params) ->
                             case lists:keyfind(<<"charset">>, 1, Params) of
                                 false ->
                                     {Type, SubType, Params};
                                 {_, Charset} ->
-                                    Charset2 = hackney_util:to_lower(Charset),
+                                    Charset2 = hackney_bstr:to_lower(Charset),
                                     Params2 = lists:keyreplace(<<"charset">>,
                                                                1, Params,
                                                                {<<"charset">>, Charset2}),
@@ -218,9 +222,9 @@ media_range(Data, Fun) ->
 -spec media_range_params(binary(), fun(), binary(), binary(),
                     [{binary(), binary()}]) -> any().
 media_range_params(Data, Fun, Type, SubType, Acc) ->
-    hackney_util:whitespace(Data,
+    hackney_bstr:whitespace(Data,
                fun (<< $;, Rest/binary >>) ->
-                hackney_util:whitespace(Rest,
+                hackney_bstr:whitespace(Rest,
                            fun (Rest2) ->
                             media_range_param_attr(Rest2, Fun, Type, SubType,
                                                    Acc)
@@ -232,7 +236,7 @@ media_range_params(Data, Fun, Type, SubType, Acc) ->
 -spec media_range_param_attr(binary(), fun(), binary(), binary(),
                     [{binary(), binary()}]) -> any().
 media_range_param_attr(Data, Fun, Type, SubType, Acc) ->
-    hackney_util:token_ci(Data,
+    hackney_bstr:token_ci(Data,
              fun (_Rest, <<>>) -> {error, badarg};
             (<< $=, Rest/binary >>, Attr) ->
                 media_range_param_value(Rest, Fun, Type, SubType, Acc, Attr)
@@ -246,7 +250,7 @@ media_range_param_value(Data, Fun, Type, SubType, Acc, <<"q">>) ->
                 accept_ext(Rest, Fun, Type, SubType, Acc, Quality, [])
         end);
 media_range_param_value(Data, Fun, Type, SubType, Acc, Attr) ->
-    hackney_util:word(Data,
+    hackney_bstr:word(Data,
          fun (Rest, Value) ->
                 media_range_params(Rest, Fun,
                                    Type, SubType, [{Attr, Value}|Acc])
@@ -255,17 +259,17 @@ media_range_param_value(Data, Fun, Type, SubType, Acc, Attr) ->
 %% @doc Parse a media type.
 -spec media_type(binary(), fun()) -> any().
 media_type(Data, Fun) ->
-    hackney_util:token_ci(Data,
+    hackney_bstr:token_ci(Data,
              fun (_Rest, <<>>) -> {error, badarg};
             (<< $/, Rest/binary >>, Type) ->
-                hackney_util:token_ci(Rest,
+                hackney_bstr:token_ci(Rest,
                          fun (_Rest2, <<>>) -> {error, badarg};
                         (Rest2, SubType) -> Fun(Rest2, Type, SubType)
                     end);
             %% This is a non-strict parsing clause required by some user agents
             %% that use * instead of */* in the list of media types.
             (Rest, <<"*">> = Type) ->
-                hackney_util:token_ci(<<"*", Rest/binary>>,
+                hackney_bstr:token_ci(<<"*", Rest/binary>>,
                          fun (_Rest2, <<>>) -> {error, badarg};
                         (Rest2, SubType) -> Fun(Rest2, Type, SubType)
                     end);
@@ -276,9 +280,9 @@ media_type(Data, Fun) ->
                     [{binary(), binary()}], 0..1000,
                     [{binary(), binary()} | binary()]) -> any().
 accept_ext(Data, Fun, Type, SubType, Params, Quality, Acc) ->
-    hackney_util:whitespace(Data,
+    hackney_bstr:whitespace(Data,
                fun (<< $;, Rest/binary >>) ->
-                hackney_util:whitespace(Rest,
+                hackney_bstr:whitespace(Rest,
                            fun (Rest2) ->
                             accept_ext_attr(Rest2, Fun,
                                             Type, SubType, Params, Quality, Acc)
@@ -292,7 +296,7 @@ accept_ext(Data, Fun, Type, SubType, Params, Quality, Acc) ->
                     [{binary(), binary()}], 0..1000,
                     [{binary(), binary()} | binary()]) -> any().
 accept_ext_attr(Data, Fun, Type, SubType, Params, Quality, Acc) ->
-    hackney_util:token_ci(Data,
+    hackney_bstr:token_ci(Data,
              fun (_Rest, <<>>) -> {error, badarg};
             (<< $=, Rest/binary >>, Attr) ->
                 accept_ext_value(Rest, Fun, Type, SubType, Params,
@@ -306,7 +310,7 @@ accept_ext_attr(Data, Fun, Type, SubType, Params, Quality, Acc) ->
                     [{binary(), binary()}], 0..1000,
                     [{binary(), binary()} | binary()], binary()) -> any().
 accept_ext_value(Data, Fun, Type, SubType, Params, Quality, Acc, Attr) ->
-    hackney_util:word(Data,
+    hackney_bstr:word(Data,
          fun (Rest, Value) ->
                 accept_ext(Rest, Fun,
                            Type, SubType, Params, Quality, [{Attr, Value}|Acc])
@@ -316,7 +320,7 @@ accept_ext_value(Data, Fun, Type, SubType, Params, Quality, Acc, Attr) ->
 %% followed by an optional quality value.
 -spec conneg(binary(), fun()) -> any().
 conneg(Data, Fun) ->
-    hackney_util:token_ci(Data,
+    hackney_bstr:token_ci(Data,
              fun (_Rest, <<>>) -> {error, badarg};
             (Rest, Conneg) ->
                 maybe_qparam(Rest,
@@ -344,7 +348,7 @@ language_range_ret(Data, Fun, LanguageTag) ->
 
 -spec language_tag(binary(), fun()) -> any().
 language_tag(Data, Fun) ->
-    hackney_util:alpha(Data,
+    hackney_bstr:alpha(Data,
           fun (_Rest, Tag) when byte_size(Tag) =:= 0; byte_size(Tag) > 8 ->
                 {error, badarg};
             (<< $-, Rest/binary >>, Tag) ->
@@ -355,7 +359,7 @@ language_tag(Data, Fun) ->
 
 -spec language_subtag(binary(), fun(), binary(), [binary()]) -> any().
 language_subtag(Data, Fun, Tag, Acc) ->
-    hackney_util:alpha(Data,
+    hackney_bstr:alpha(Data,
           fun (_Rest, SubTag) when byte_size(SubTag) =:= 0;
                     byte_size(SubTag) > 8 -> {error, badarg};
             (<< $-, Rest/binary >>, SubTag) ->
@@ -368,9 +372,9 @@ language_subtag(Data, Fun, Tag, Acc) ->
 
 -spec maybe_qparam(binary(), fun()) -> any().
 maybe_qparam(Data, Fun) ->
-    hackney_util:whitespace(Data,
+    hackney_bstr:whitespace(Data,
                fun (<< $;, Rest/binary >>) ->
-                hackney_util:whitespace(Rest,
+                hackney_bstr:whitespace(Rest,
                            fun (Rest2) ->
                             %% This is a non-strict parsing clause required by some user agents
                             %% that use the wrong delimiter putting a charset where a qparam is
@@ -394,12 +398,12 @@ qparam(<< Q, $=, Data/binary >>, Fun) when Q =:= $q; Q =:= $Q ->
 %% @doc Parse either a list of entity tags or a "*".
 -spec entity_tag_match(binary()) -> any().
 entity_tag_match(<< $*, Rest/binary >>) ->
-    hackney_util:whitespace(Rest,
+    hackney_bstr:whitespace(Rest,
                fun (<<>>) -> '*';
             (_Any) -> {error, badarg}
         end);
 entity_tag_match(Data) ->
-    hackney_util:nonempty_list(Data, fun entity_tag/2).
+    hackney_bstr:nonempty_list(Data, fun entity_tag/2).
 
 %% @doc Parse an entity-tag.
 -spec entity_tag(binary(), fun()) -> any().
@@ -410,7 +414,7 @@ entity_tag(Data, Fun) ->
 
 -spec opaque_tag(binary(), fun(), weak | strong) -> any().
 opaque_tag(Data, Fun, Strength) ->
-    hackney_util:quoted_string(Data,
+    hackney_bstr:quoted_string(Data,
                   fun (_Rest, <<>>) -> {error, badarg};
             (Rest, OpaqueTag) -> Fun(Rest, {Strength, OpaqueTag})
         end).
@@ -418,12 +422,12 @@ opaque_tag(Data, Fun, Strength) ->
 %% @doc Parse an expectation.
 -spec expectation(binary(), fun()) -> any().
 expectation(Data, Fun) ->
-    hackney_util:token_ci(Data,
+    hackney_bstr:token_ci(Data,
              fun (_Rest, <<>>) -> {error, badarg};
             (<< $=, Rest/binary >>, Expectation) ->
-                hackney_util:word(Rest,
+                hackney_bstr:word(Rest,
                      fun (Rest2, ExtValue) ->
-                            hackney_util:params(Rest2, fun (Rest3, ExtParams) ->
+                            hackney_bstr:params(Rest2, fun (Rest3, ExtParams) ->
                                         Fun(Rest3, {Expectation, ExtValue, ExtParams})
                                 end)
                     end);
@@ -466,7 +470,7 @@ qvalue(Data, Fun, Q, _M) ->
 %% Only Basic authorization is supported so far.
 -spec authorization(binary(), binary()) -> {binary(), any()} | {error, badarg}.
 authorization(UserPass, Type = <<"basic">>) ->
-    hackney_util:whitespace(UserPass,
+    hackney_bstr:whitespace(UserPass,
                fun(D) ->
                 authorization_basic_userid(base64:mime_decode(D),
                                            fun(Rest, Userid) ->
@@ -477,7 +481,7 @@ authorization(UserPass, Type = <<"basic">>) ->
                     end)
         end);
 authorization(String, Type) ->
-    hackney_util:whitespace(String, fun(Rest) -> {Type, Rest} end).
+    hackney_bstr:whitespace(String, fun(Rest) -> {Type, Rest} end).
 
 %% @doc Parse user credentials.
 -spec authorization_basic_userid(binary(), fun()) -> any().
@@ -513,12 +517,12 @@ authorization_basic_password(<<C, Rest/binary>>, Fun, Acc) ->
     Unit :: binary(),
     Range :: {non_neg_integer(), non_neg_integer() | infinity} | neg_integer().
 range(Data) ->
-    hackney_util:token_ci(Data, fun range/2).
+    hackney_bstr:token_ci(Data, fun range/2).
 
 range(Data, Token) ->
-    hackney_util:whitespace(Data,
+    hackney_bstr:whitespace(Data,
                fun(<<"=", Rest/binary>>) ->
-                case hackney_util:list(Rest, fun range_beginning/2) of
+                case hackney_bstr:list(Rest, fun range_beginning/2) of
                     {error, badarg} ->
                         {error, badarg};
                     Ranges ->
@@ -535,7 +539,7 @@ range_beginning(Data, Fun) ->
         end).
 
 range_ending(Data, Fun, RangeBeginning) ->
-    hackney_util:whitespace(Data,
+    hackney_bstr:whitespace(Data,
                fun(<<"-", R/binary>>) ->
                 case RangeBeginning of
                     suffix ->
@@ -552,16 +556,16 @@ range_ending(Data, Fun, RangeBeginning) ->
 
 -spec range_digits(binary(), fun()) -> any().
 range_digits(Data, Fun) ->
-    hackney_util:whitespace(Data,
+    hackney_bstr:whitespace(Data,
                fun(D) ->
-                hackney_util:digits(D, Fun)
+                hackney_bstr:digits(D, Fun)
         end).
 
 -spec range_digits(binary(), any(), fun()) -> any().
 range_digits(Data, Default, Fun) ->
-    hackney_util:whitespace(Data,
+    hackney_bstr:whitespace(Data,
                fun(<< C, Rest/binary >>) when C >= $0, C =< $9 ->
-                hackney_util:digits(Rest, Fun, C - $0);
+                hackney_bstr:digits(Rest, Fun, C - $0);
             (_) ->
                 Fun(Data, Default)
         end).

@@ -153,7 +153,7 @@ asctime_year(<< Y1, Y2, Y3, Y4, Rest/binary >>, {Month, Day}, Time)
 
 -spec http_date_ret(binary(), tuple()) -> any().
 http_date_ret(Data, DateTime = {Date, _Time}) ->
-    hackney_util:whitespace(Data,
+    hackney_bstr:whitespace(Data,
                fun (<<>>) ->
                 case calendar:valid_date(Date) of
                     true -> DateTime;

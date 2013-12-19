@@ -1,5 +1,5 @@
-Expm.Package.new(name: "hackney", description: "Simple HTTP client in Erlang",
-                 version: "0.8.3", keywords: ["http","client","binary"],
+Expm.Package.new(name: "hackney_lib", description: "Web toolkit - miscellaneous tools to play with HTTP and Web protocols",
+                 version: "0.1.0", keywords: ["http","client","binary"],
                  dependencies: ["mimetypes"],
                  licenses: [[name: "Apache License, Version 2.0", file: "LICENSE"]],
                  contributors: [[name: "Adam Rutkowski",
@@ -61,5 +61,5 @@ Expm.Package.new(name: "hackney", description: "Simple HTTP client in Erlang",
                                 ]],
                  maintainers: [[name: "Benoit Chesneau",
                                 email: "bchesneau@gmail.com"]],
-                 repositories: [[github: "benoitc/hackney", tag: "0.8.3"]])
+                 repositories: [[github: "benoitc/hackney", tag: "0.1.0"]])
 

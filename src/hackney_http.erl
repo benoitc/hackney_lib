@@ -288,16 +288,16 @@ parse_header(Line, St) ->
         [K] -> [K, <<>>];
         [K, V] -> [K, V]
     end,
-    St1 = case hackney_util:to_lower(Key) of
+    St1 = case hackney_bstr:to_lower(Key) of
         <<"content-length">> ->
             CLen = list_to_integer(binary_to_list(Value)),
             St#hparser{clen=CLen};
         <<"transfer-encoding">> ->
-            St#hparser{te=hackney_util:to_lower(Value)};
+            St#hparser{te=hackney_bstr:to_lower(Value)};
         <<"connection">> ->
-            St#hparser{connection=hackney_util:to_lower(Value)};
+            St#hparser{connection=hackney_bstr:to_lower(Value)};
         <<"content-type">> ->
-            St#hparser{ctype=hackney_util:to_lower(Value)};
+            St#hparser{ctype=hackney_bstr:to_lower(Value)};
         <<"location">> ->
             St#hparser{location=Value};
         _ ->

@@ -1,5 +1,5 @@
-hackney
--------
+hackney_lib
+-----------
 
 2012-2013 (c) Benoît Chesneau <benoitc@e-engura.org>
 
@@ -11,8 +11,4 @@ Third parties
 -------------
 
 *) Some part of the code from the cowboy project under ISC license:
-Copyright (c) 2011-2012, Loïc Hoguin <essen@ninenines.eu>
-
-*) hackney_pool is based on lhttpc_manager code from the lhttpc project
-under BSD.
-Copyright (c) 2009, Erlang Training and Consulting Ltd.
+Copyright (c) 2011-2013, Loïc Hoguin <essen@ninenines.eu>
