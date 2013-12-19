@@ -235,11 +235,11 @@ urlencode(<<>>, Acc, _Plus, _Upper) ->
 
 -spec tohexu(byte()) -> byte().
 tohexu(C) when C < 10 -> $0 + C;
-tohexu(C) when C < 17 -> $A + C - 10.
+tohexu(C) when C < 16 -> $A + C - 10.
 
 -spec tohexl(byte()) -> byte().
 tohexl(C) when C < 10 -> $0 + C;
-tohexl(C) when C < 17 -> $a + C - 10.
+tohexl(C) when C < 16 -> $a + C - 10.
 
 
 %% parse a query or a form from a binary and return a list of properties
