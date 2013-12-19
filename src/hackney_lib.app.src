@@ -4,7 +4,7 @@
 {application, hackney_lib,
     [
         {description, "Web toolkit"},
-        {vsn, "0.1.0"},
+        {vsn, "0.1.1"},
         {registered, []},
         {applications, [mimetypes]},
         {included_applications, []},

@@ -46,8 +46,7 @@
 %%% - `{ok, binary(), parser()}': on body, when a chunk has been
 %%% parsed. To continue the parsing you must call
 %%% `hackney_http:execute/1' with the given `parser()'.
-%%% - `done': when the parsing is done
-%%% - `{done, binary()}': on body, when no more need to be parsing. The binary
+%%% - `{done, binary()}': when the parsing is done. The binary
 %%% given correpond to the non parsed part of the internal buffer.
 %%% - `{error, term{}}': when an error happen
 
@@ -83,8 +82,7 @@
 -type uri() :: binary().
 -type body_result() :: {more, parser(), binary()}
     | {ok, binary(), parser()}
-    | {done, binary()}
-    | done.
+    | {done, binary()}.
 
 -type parser_result() ::
     {response, http_version(), status(), http_reason(), parser()}
@@ -328,20 +326,20 @@ parse_trailers(St, Acc) ->
     end.
 
 parse_body(St=#hparser{body_state=waiting, te=TE, clen=Length,
-                       method=Method}) ->
+                       method=Method, buffer=Buffer}) ->
 	case TE of
 		<<"chunked">> ->
 			parse_body(St#hparser{body_state=
 				{stream, fun te_chunked/2, {0, 0}, fun ce_identity/1}});
 		_ when Length =:= 0 orelse Method =:= <<"HEAD">> ->
-            done;
+            {done, Buffer};
         _ ->
 		    parse_body(St#hparser{body_state=
 						{stream, fun te_identity/2, {0, Length},
 						 fun ce_identity/1}})
 	end;
-parse_body(#hparser{body_state=done}) ->
-	done;
+parse_body(#hparser{body_state=done, buffer=Buffer}) ->
+	{done, Buffer};
 parse_body(St=#hparser{buffer=Buffer, body_state={stream, _, _, _}})
 		when Buffer =/= <<>> ->
 	transfer_decode(Buffer, St#hparser{buffer= <<>>});
@@ -389,7 +387,7 @@ transfer_decode(Data, St=#hparser{
             content_decode(ContentDecode, Data2, St#hparser{buffer=Rest,
                                                             body_state=done});
         done ->
-            done;
+            {done, <<>>};
         {error, Reason} ->
             {error, Reason}
     end.
