@@ -507,14 +507,14 @@ get_property(state, #hparser{state=State}) ->
 get_property(version, #hparser{version=Version}) ->
     Version;
 get_property(method, #hparser{method=Method}) ->
-    Version;
+    Method;
 get_property(transfer_encoding, #hparser{te=TE}) ->
-    CLen;
+    TE;
 get_property(content_length, #hparser{clen=CLen}) ->
     CLen;
 get_property(connection, #hparser{connection=Connection}) ->
     Connection;
-get_property(content_type, #hparser{ctype=Ctype}) ->
+get_property(content_type, #hparser{ctype=CType}) ->
     CType;
 get_property(location, #hparser{location=Location}) ->
     Location.
