@@ -186,7 +186,7 @@ uri() = binary()
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#execute-1">execute/1</a></td><td>Execute the parser with the current buffer.</td></tr><tr><td valign="top"><a href="#execute-2">execute/2</a></td><td>Execute the parser with the new buffer.</td></tr><tr><td valign="top"><a href="#parser-0">parser/0</a></td><td>Create a new HTTP parser.</td></tr><tr><td valign="top"><a href="#parser-1">parser/1</a></td><td>create a new HTTP parser with options.</td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#execute-1">execute/1</a></td><td>Execute the parser with the current buffer.</td></tr><tr><td valign="top"><a href="#execute-2">execute/2</a></td><td>Execute the parser with the new buffer.</td></tr><tr><td valign="top"><a href="#get-2">get/2</a></td><td>retrieve a parser property.</td></tr><tr><td valign="top"><a href="#parser-0">parser/0</a></td><td>Create a new HTTP parser.</td></tr><tr><td valign="top"><a href="#parser-1">parser/1</a></td><td>create a new HTTP parser with options.</td></tr></table>
 
 
 <a name="functions"></a>
@@ -219,6 +219,28 @@ execute(Hparser::#hparser{}, Bin::binary()) -&gt; <a href="#type-parser_result">
 
 
 Execute the parser with the new buffer
+<a name="get-2"></a>
+
+### get/2 ###
+
+
+<pre><code>
+get(Parser::<a href="#type-parser">parser()</a>, Props::atom() | [atom()]) -&gt; any()
+</code></pre>
+
+<br></br>
+
+
+retrieve a parser property.
+Properties are:
+- `buffer`: internal buffer of the parser (non parsed)
+- `state`: the current state (on_status, on_header, on_body, done)
+- `version`: HTTP version
+- `content_lenght`: content length header if any
+- `transfer_encoding`: transfer encoding header if any
+- `content_type`: content type header if any
+- `location`: location header if any
+- `connection`: connection header if any.
 <a name="parser-0"></a>
 
 ### parser/0 ###
