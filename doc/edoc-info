@@ -1,9 +1,5 @@
 %% encoding: UTF-8
-{application,hackney}.
+{application,hackney_lib}.
 {packages,[]}.
-{modules,[hackney,hackney_app,hackney_connect,hackney_cookie,hackney_date,
-          hackney_deps,hackney_headers,hackney_http,hackney_http_proxy,
-          hackney_manager,hackney_multipart,hackney_pool,hackney_pool_handler,
-          hackney_request,hackney_response,hackney_socks5,
-          hackney_ssl_transport,hackney_stream,hackney_sup,
-          hackney_tcp_transport,hackney_url,hackney_util]}.
+{modules,[hackney_bstr,hackney_cookie,hackney_date,hackney_headers,
+          hackney_http,hackney_multipart,hackney_url]}.

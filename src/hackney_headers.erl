@@ -36,7 +36,7 @@ new(Headers) when is_list(Headers) ->
                 insert(K, V, D)
         end, dict:new(), Headers).
 
-%% @doc extend the headers with a new list of `{Key, Value}` pair.
+%% @doc extend the headers with a new list of `{Key, Value}' pair.
 update(Headers, KVs) ->
     lists:foldl(fun({K,_V}=KV, D) ->
                 dict:store(hackney_bstr:to_lower(K), KV, D)
