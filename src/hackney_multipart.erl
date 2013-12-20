@@ -18,6 +18,7 @@
          decode_form/2, decode_form/3,
          boundary/0,
          parser/1,
+         content_disposition/1,
          encode/2,
          field/1,
          mp_header/4]).
@@ -32,6 +33,7 @@
 -type cont(T) :: fun(() -> T).
 -type body_result() :: {body, binary(), body_cont()} | end_of_part().
 -type end_of_part() :: {end_of_part, cont(more(part_result()))}.
+-type disposition() :: {binary(), [{binary(), binary()}]}.
 
 %% @doc encode a list of properties in a form.
 encode_form(KVs) ->
@@ -50,6 +52,20 @@ decode_form(Boundary, Body, Acc) ->
 -spec parser(binary()) -> part_parser().
 parser(Boundary) when is_binary(Boundary) ->
         fun (Bin) when is_binary(Bin) -> parse(Bin, Boundary) end.
+
+%% @doc Parse a content disposition.
+%% @todo Parse the MIME header instead of the HTTP one.
+-spec content_disposition(binary()) -> disposition().
+content_disposition(Data) ->
+    hackney_bstr:token_ci(Data, fun
+            (_Rest, <<>>) ->
+                {error, badarg};
+            (Rest, Disposition) ->
+                hackney_bstr:params(Rest, fun
+                        (<<>>, Params) -> {Disposition, Params};
+                        (_Rest2, _) -> {error, badarg}
+                    end)
+        end).
 
 boundary() ->
     Unique = unique(16),
