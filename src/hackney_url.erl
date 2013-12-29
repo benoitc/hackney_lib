@@ -21,7 +21,7 @@
          make_url/3,
          fix_path/1]).
 
--include("hackney.hrl").
+-include("hackney_lib.hrl").
 
 -type qs_vals() :: [{binary(), binary() | true}].
 
@@ -93,7 +93,12 @@ unparse_url(#hackney_url{}=Url) ->
         _ -> << "#", Fragment/binary >>
     end,
 
-    iolist_to_binary([Scheme1, Netloc1, Path, Qs1, Fragment1]).
+    Path1 = case Path of
+        <<>> -> <<"/">>;
+        _ -> Path
+    end,
+
+    iolist_to_binary([Scheme1, Netloc1, Path1, Qs1, Fragment1]).
 
 %% @private
 parse_addr(Addr, S) ->

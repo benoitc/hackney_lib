@@ -12,7 +12,7 @@
 
 -module(hackney_multipart).
 
--include("hackney.hrl").
+-include("hackney_lib.hrl").
 
 -export([encode_form/1, encode_form/2,
          decode_form/2, decode_form/3,
