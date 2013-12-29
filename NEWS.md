@@ -1,5 +1,10 @@
 # NEWS
 
+0.2.1 - 2013/12/29
+------------------
+
+- fix multipart header. Do not start the first part with \r\n
+
 0.2.0 - 2013/12/29
 ------------------
 
