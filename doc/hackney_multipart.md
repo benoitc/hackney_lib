@@ -139,7 +139,7 @@ part_result() = <a href="#type-headers">headers()</a> | eof
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#boundary-0">boundary/0</a></td><td></td></tr><tr><td valign="top"><a href="#decode_form-2">decode_form/2</a></td><td>decode a multipart form.</td></tr><tr><td valign="top"><a href="#decode_form-3">decode_form/3</a></td><td></td></tr><tr><td valign="top"><a href="#encode-2">encode/2</a></td><td></td></tr><tr><td valign="top"><a href="#encode_form-1">encode_form/1</a></td><td>encode a list of properties in a form.</td></tr><tr><td valign="top"><a href="#field-1">field/1</a></td><td></td></tr><tr><td valign="top"><a href="#mp_header-4">mp_header/4</a></td><td></td></tr><tr><td valign="top"><a href="#parser-1">parser/1</a></td><td>Return a multipart parser for the given boundary.</td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#boundary-0">boundary/0</a></td><td></td></tr><tr><td valign="top"><a href="#decode_form-2">decode_form/2</a></td><td>decode a multipart form.</td></tr><tr><td valign="top"><a href="#decode_form-3">decode_form/3</a></td><td></td></tr><tr><td valign="top"><a href="#encode_form-1">encode_form/1</a></td><td>encode a list of parts a multiart form.</td></tr><tr><td valign="top"><a href="#encode_form-2">encode_form/2</a></td><td></td></tr><tr><td valign="top"><a href="#len_mp_stream-2">len_mp_stream/2</a></td><td>get the size of a mp stream.</td></tr><tr><td valign="top"><a href="#mp_data_header-2">mp_data_header/2</a></td><td>return the multipart header for a data.</td></tr><tr><td valign="top"><a href="#mp_eof-1">mp_eof/1</a></td><td>return the boundary ennding a multipart.</td></tr><tr><td valign="top"><a href="#mp_file_header-2">mp_file_header/2</a></td><td>return the multipart header for a file that will be sent later.</td></tr><tr><td valign="top"><a href="#mp_header-2">mp_header/2</a></td><td>create a generic multipart header.</td></tr><tr><td valign="top"><a href="#mp_mixed_header-2">mp_mixed_header/2</a></td><td>return the mixed multipart header.</td></tr><tr><td valign="top"><a href="#parser-1">parser/1</a></td><td>Return a multipart parser for the given boundary.</td></tr></table>
 
 
 <a name="functions"></a>
@@ -173,34 +173,102 @@ decode a multipart form.
 `decode_form(Boundary, Body, Acc) -> any()`
 
 
-<a name="encode-2"></a>
-
-### encode/2 ###
-
-`encode(X1, Boundary) -> any()`
-
-
 <a name="encode_form-1"></a>
 
 ### encode_form/1 ###
 
-`encode_form(KVs) -> any()`
+`encode_form(Parts) -> any()`
 
-encode a list of properties in a form.
-<a name="field-1"></a>
+encode a list of parts a multiart form.
+Parts can be under the form:
+- `{file, Path}` : to send a file
+- `{file, Path, ExtraHeaders}` : to send a file with extra headers
+- `{mp_mixed, Name, Boundart}` to send a mixed multipart.
+- `{mp_mixed_eof, Boundary}`: to signal the end of the mixed
+multipart boundary.
+- `{Name, Data}`: to send a custom content as a part
+- `{Name, Data, ExtraHeaders}`: the same as above but with extra
+headers.
+<a name="encode_form-2"></a>
 
-### field/1 ###
+### encode_form/2 ###
 
-`field(V) -> any()`
-
-
-<a name="mp_header-4"></a>
-
-### mp_header/4 ###
-
-`mp_header(Field, FileName, CType, Boundary) -> any()`
+`encode_form(Parts, Boundary) -> any()`
 
 
+<a name="len_mp_stream-2"></a>
+
+### len_mp_stream/2 ###
+
+`len_mp_stream(Parts, Boundary) -> any()`
+
+
+get the size of a mp stream. Useful to calculate the
+content-length of a full multipart stream and send it as an identity
+transfer-encoding instead of chunked so any server can handle it.
+
+
+Calculated Parts can be under the form:
+- `{file, Path}` : to send a file
+- `{file, Path, ExtraHeaders}` : to send a file with extra headers
+- `{mp_mixed, Name, Boundart}` to send a mixed multipart.
+multipart boundary.
+- `{Name, DataLen}`: to send a custom content as a part
+- `{Name, DataLen, ExtraHeaders}`: the same as above but with extra
+headers.
+<a name="mp_data_header-2"></a>
+
+### mp_data_header/2 ###
+
+
+<pre><code>
+mp_data_header(X1::{Name::binary(), DataLen::integer()} | {Name::binary(), DataLen::integer(), ExtraHeaders::[{binary(), binary()}]}, Boundary::binary()) -&gt; {binary(), DataLen::integer()}
+</code></pre>
+
+<br></br>
+
+
+return the multipart header for a data
+<a name="mp_eof-1"></a>
+
+### mp_eof/1 ###
+
+`mp_eof(Boundary) -> any()`
+
+return the boundary ennding a multipart
+<a name="mp_file_header-2"></a>
+
+### mp_file_header/2 ###
+
+
+<pre><code>
+mp_file_header(X1::{file, Path::binary()} | {file, Path::binary(), ExtraHeaders::[{binary(), binary()}]}, Boundary::binary()) -&gt; {binary(), FileSize::integer()}
+</code></pre>
+
+<br></br>
+
+
+return the multipart header for a file that will be sent later
+<a name="mp_header-2"></a>
+
+### mp_header/2 ###
+
+`mp_header(Headers, Boundary) -> any()`
+
+create a generic multipart header
+<a name="mp_mixed_header-2"></a>
+
+### mp_mixed_header/2 ###
+
+
+<pre><code>
+mp_mixed_header(Name::binary(), Boundary::binary()) -&gt; {binary(), 0}
+</code></pre>
+
+<br></br>
+
+
+return the mixed multipart header
 <a name="parser-1"></a>
 
 ### parser/1 ###
