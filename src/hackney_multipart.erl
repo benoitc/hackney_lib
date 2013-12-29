@@ -54,54 +54,54 @@ encode_form(Parts, Boundary) ->
     {Size, Acc} = lists:foldl(fun
                 ({file, Path}, {AccSize, AccBin}) ->
                     {MpHeader, Len} = mp_file_header({file, Path}, Boundary),
-                    AccSize1 = AccSize + byte_size(MpHeader) + Len,
+                    AccSize1 = AccSize + byte_size(MpHeader) + Len + 2,
                     {ok, Bin} = file:read_file(Path),
-                    PartBin = << MpHeader/binary, Bin/binary >>,
+                    PartBin = << MpHeader/binary, Bin/binary , "\r\n" >>,
                     {AccSize1, << AccBin/binary, PartBin/binary >>};
                 ({file, Path, ExtraHeaders}, {AccSize, AccBin}) ->
                     {MpHeader, Len} = mp_file_header({file, Path,
                                                       ExtraHeaders}, Boundary),
-                    AccSize1 = AccSize + byte_size(MpHeader) + Len,
+                    AccSize1 = AccSize + byte_size(MpHeader) + Len + 2,
                     {ok, Bin} = file:read_file(Path),
-                    PartBin = << MpHeader/binary, Bin/binary >>,
+                    PartBin = << MpHeader/binary, Bin/binary, "\r\n"  >>,
                     {AccSize1, << AccBin/binary, PartBin/binary >>};
                 ({file, Path, Disposition, ExtraHeaders}, {
                                 AccSize, AccBin}) ->
                     {MpHeader, Len} = mp_file_header({file, Path, Disposition,
                                                       ExtraHeaders}, Boundary),
-                    AccSize1 = AccSize + byte_size(MpHeader) + Len,
+                    AccSize1 = AccSize + byte_size(MpHeader) + Len + 2,
                     {ok, Bin} = file:read_file(Path),
-                    PartBin = << MpHeader/binary, Bin/binary >>,
+                    PartBin = << MpHeader/binary, Bin/binary, "\r\n"  >>,
                     {AccSize1, << AccBin/binary, PartBin/binary >>};
                 ({mp_mixed, Name, MixedBoundary}, {AccSize, AccBin}) ->
                     {MpHeader, _} = mp_mixed_header(Name, MixedBoundary),
-                    AccSize1 = AccSize + byte_size(MpHeader),
-                    {AccSize1, << AccBin/binary, MpHeader/binary >>};
+                    AccSize1 = AccSize + byte_size(MpHeader) + 2,
+                    {AccSize1, << AccBin/binary, MpHeader/binary, "\r\n" >>};
                 ({mp_mixed_eof, MixedBoundary}, {AccSize, AccBin}) ->
                     Eof = mp_eof(MixedBoundary),
-                    {AccSize + byte_size(Eof), <<AccBin/binary,
-                                                  Eof/binary >>};
+                    {AccSize + byte_size(Eof + 2), <<AccBin/binary,
+                                                     Eof/binary, "\r\n" >>};
                 ({Name, Bin}, {AccSize, AccBin}) when is_binary(Bin) ->
                     Len = byte_size(Bin),
                     {MpHeader, Len} = mp_data_header({Name, Len}, Boundary),
-                    AccSize1 = AccSize + byte_size(MpHeader) + Len,
-                    PartBin = << MpHeader/binary, Bin/binary >>,
+                    AccSize1 = AccSize + byte_size(MpHeader) + Len + 2,
+                    PartBin = << MpHeader/binary, Bin/binary, "\r\n" >>,
                     {AccSize1, << AccBin/binary, PartBin/binary >>};
                 ({Name, Bin, ExtraHeaders}, {AccSize, AccBin})
                         when is_binary(Bin) ->
                     Len = byte_size(Bin),
                     {MpHeader, Len} = mp_data_header({Name, Len, ExtraHeaders},
                                                      Boundary),
-                    AccSize1 = AccSize + byte_size(MpHeader) + Len,
-                    PartBin = << MpHeader/binary, Bin/binary >>,
+                    AccSize1 = AccSize + byte_size(MpHeader) + Len + 2,
+                    PartBin = << MpHeader/binary, Bin/binary, "\r\n" >>,
                     {AccSize1, << AccBin/binary, PartBin/binary >>};
                 ({Name, Bin, Disposition, ExtraHeaders}, {AccSize, AccBin})
                         when is_binary(Bin) ->
                     Len = byte_size(Bin),
                     {MpHeader, Len} = mp_data_header({Name, Len, Disposition,
                                                       ExtraHeaders}, Boundary),
-                    AccSize1 = AccSize + byte_size(MpHeader) + Len,
-                    PartBin = << MpHeader/binary, Bin/binary >>,
+                    AccSize1 = AccSize + byte_size(MpHeader) + Len + 2,
+                    PartBin = << MpHeader/binary, Bin/binary, "\r\n" >>,
                     {AccSize1, << AccBin/binary, PartBin/binary >>}
         end, {0, <<>>}, Parts),
     MpEof = mp_eof(Boundary),
@@ -131,7 +131,7 @@ boundary() ->
 
 %% @doc create a generic multipart header
 mp_header(Headers, Boundary) ->
-    iolist_to_binary([<<"\r\n--", Boundary/binary, "\r\n">>,
+    iolist_to_binary([<<"--", Boundary/binary, "\r\n">>,
                       hackney_headers:to_binary(Headers)]).
 
 %% @doc return the boundary ennding a multipart
@@ -154,29 +154,30 @@ len_mp_stream(Parts, Boundary) ->
     Size = lists:foldl(fun
                 ({file, Path}, AccSize) ->
                     {MpHeader, Len} = mp_file_header({file, Path}, Boundary),
-                    AccSize + byte_size(MpHeader) + Len;
+                    AccSize + byte_size(MpHeader) + Len + 2;
                 ({file, Path, ExtraHeaders}, AccSize) ->
                     {MpHeader, Len} = mp_file_header({file, Path,
                                                       ExtraHeaders}, Boundary),
-                    AccSize + byte_size(MpHeader) + Len;
+                    AccSize + byte_size(MpHeader) + Len + 2;
                 ({file, Path, Disposition, ExtraHeaders}, AccSize) ->
                     {MpHeader, Len} = mp_file_header({file, Path, Disposition,
                                                       ExtraHeaders}, Boundary),
-                    AccSize + byte_size(MpHeader) + Len;
+                    AccSize + byte_size(MpHeader) + Len + 2;
                 ({mp_mixed, Name, MixedBoundary}, AccSize) ->
                     {MpHeader, _} = mp_mixed_header(Name, MixedBoundary),
-                    AccSize + byte_size(MpHeader) + byte_size(mp_eof(MixedBoundary));
+                    AccSize + byte_size(MpHeader) + 2 +
+                    byte_size(mp_eof(MixedBoundary));
                 ({Name, Len}, AccSize) ->
                     {MpHeader, Len} = mp_data_header({Name, Len}, Boundary),
-                    AccSize + byte_size(MpHeader) + Len;
+                    AccSize + byte_size(MpHeader) + Len + 2;
                 ({Name, Len, ExtraHeaders}, AccSize) ->
                     {MpHeader, Len} = mp_data_header({Name, Len, ExtraHeaders},
                                                      Boundary),
-                    AccSize + byte_size(MpHeader) + Len;
+                    AccSize + byte_size(MpHeader) + Len + 2;
                 ({Name, Len, Disposition, ExtraHeaders}, AccSize) ->
                     {MpHeader, Len} = mp_data_header({Name, Len, Disposition,
                                                       ExtraHeaders}, Boundary),
-                    AccSize + byte_size(MpHeader) + Len
+                    AccSize + byte_size(MpHeader) + Len + 2
             end, 0, Parts),
     Size + byte_size(mp_eof(Boundary)).
 
