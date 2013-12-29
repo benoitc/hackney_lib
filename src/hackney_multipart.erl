@@ -14,14 +14,17 @@
 
 -include("hackney.hrl").
 
--export([encode_form/1,
+-export([encode_form/1, encode_form/2,
          decode_form/2, decode_form/3,
          boundary/0,
-         parser/1,
-         content_disposition/1,
-         encode/2,
-         field/1,
-         mp_header/4]).
+         parser/1]).
+
+-export([mp_header/2,
+         mp_eof/1,
+         len_mp_stream/2,
+         mp_file_header/2,
+         mp_mixed_header/2,
+         mp_data_header/2]).
 
 -type part_parser() :: parser(more(part_result())).
 -type parser(T) :: fun((binary()) -> T).
@@ -33,11 +36,79 @@
 -type cont(T) :: fun(() -> T).
 -type body_result() :: {body, binary(), body_cont()} | end_of_part().
 -type end_of_part() :: {end_of_part, cont(more(part_result()))}.
--type disposition() :: {binary(), [{binary(), binary()}]}.
 
-%% @doc encode a list of properties in a form.
-encode_form(KVs) ->
-    encode_form(KVs, boundary(), []).
+%% @doc encode a list of parts a multiart form.
+%% Parts can be under the form:
+%%  - `{file, Path}' : to send a file
+%%  - `{file, Path, ExtraHeaders}' : to send a file with extra headers
+%%  - `{mp_mixed, Name, Boundart}' to send a mixed multipart.
+%%  - `{mp_mixed_eof, Boundary}': to signal the end of the mixed
+%%  multipart boundary.
+%%  - `{Name, Data}': to send a custom content as a part
+%%  - `{Name, Data, ExtraHeaders}': the same as above but with extra
+%%  headers.
+encode_form(Parts) ->
+    encode_form(Parts, boundary()).
+
+encode_form(Parts, Boundary) ->
+    {Size, Acc} = lists:foldl(fun
+                ({file, Path}, {AccSize, AccBin}) ->
+                    {MpHeader, Len} = mp_file_header({file, Path}, Boundary),
+                    AccSize1 = AccSize + byte_size(MpHeader) + Len,
+                    {ok, Bin} = file:read_file(Path),
+                    PartBin = << MpHeader/binary, Bin/binary >>,
+                    {AccSize1, << AccBin/binary, PartBin/binary >>};
+                ({file, Path, ExtraHeaders}, {AccSize, AccBin}) ->
+                    {MpHeader, Len} = mp_file_header({file, Path,
+                                                      ExtraHeaders}, Boundary),
+                    AccSize1 = AccSize + byte_size(MpHeader) + Len,
+                    {ok, Bin} = file:read_file(Path),
+                    PartBin = << MpHeader/binary, Bin/binary >>,
+                    {AccSize1, << AccBin/binary, PartBin/binary >>};
+                ({file, Path, Disposition, ExtraHeaders}, {
+                                AccSize, AccBin}) ->
+                    {MpHeader, Len} = mp_file_header({file, Path, Disposition,
+                                                      ExtraHeaders}, Boundary),
+                    AccSize1 = AccSize + byte_size(MpHeader) + Len,
+                    {ok, Bin} = file:read_file(Path),
+                    PartBin = << MpHeader/binary, Bin/binary >>,
+                    {AccSize1, << AccBin/binary, PartBin/binary >>};
+                ({mp_mixed, Name, MixedBoundary}, {AccSize, AccBin}) ->
+                    {MpHeader, _} = mp_mixed_header(Name, MixedBoundary),
+                    AccSize1 = AccSize + byte_size(MpHeader),
+                    {AccSize1, << AccBin/binary, MpHeader/binary >>};
+                ({mp_mixed_eof, MixedBoundary}, {AccSize, AccBin}) ->
+                    Eof = mp_eof(MixedBoundary),
+                    {AccSize + byte_size(Eof), <<AccBin/binary,
+                                                  Eof/binary >>};
+                ({Name, Bin}, {AccSize, AccBin}) when is_binary(Bin) ->
+                    Len = byte_size(Bin),
+                    {MpHeader, Len} = mp_data_header({Name, Len}, Boundary),
+                    AccSize1 = AccSize + byte_size(MpHeader) + Len,
+                    PartBin = << MpHeader/binary, Bin/binary >>,
+                    {AccSize1, << AccBin/binary, PartBin/binary >>};
+                ({Name, Bin, ExtraHeaders}, {AccSize, AccBin})
+                        when is_binary(Bin) ->
+                    Len = byte_size(Bin),
+                    {MpHeader, Len} = mp_data_header({Name, Len, ExtraHeaders},
+                                                     Boundary),
+                    AccSize1 = AccSize + byte_size(MpHeader) + Len,
+                    PartBin = << MpHeader/binary, Bin/binary >>,
+                    {AccSize1, << AccBin/binary, PartBin/binary >>};
+                ({Name, Bin, Disposition, ExtraHeaders}, {AccSize, AccBin})
+                        when is_binary(Bin) ->
+                    Len = byte_size(Bin),
+                    {MpHeader, Len} = mp_data_header({Name, Len, Disposition,
+                                                      ExtraHeaders}, Boundary),
+                    AccSize1 = AccSize + byte_size(MpHeader) + Len,
+                    PartBin = << MpHeader/binary, Bin/binary >>,
+                    {AccSize1, << AccBin/binary, PartBin/binary >>}
+        end, {0, <<>>}, Parts),
+    MpEof = mp_eof(Boundary),
+    FinalSize = Size + byte_size(MpEof),
+    {<< Acc/binary, MpEof/binary >>, FinalSize}.
+
+
 
 %% @doc decode a multipart form.
 -spec decode_form(binary(), binary()) -> {ok, list()} | {error, term()}.
@@ -53,61 +124,105 @@ decode_form(Boundary, Body, Acc) ->
 parser(Boundary) when is_binary(Boundary) ->
         fun (Bin) when is_binary(Bin) -> parse(Bin, Boundary) end.
 
-%% @doc Parse a content disposition.
-%% @todo Parse the MIME header instead of the HTTP one.
--spec content_disposition(binary()) -> disposition().
-content_disposition(Data) ->
-    hackney_bstr:token_ci(Data, fun
-            (_Rest, <<>>) ->
-                {error, badarg};
-            (Rest, Disposition) ->
-                hackney_bstr:params(Rest, fun
-                        (<<>>, Params) -> {Disposition, Params};
-                        (_Rest2, _) -> {error, badarg}
-                    end)
-        end).
 
 boundary() ->
     Unique = unique(16),
     <<"---------------------------", Unique/binary>>.
 
-encode({Id, {file, Name, Content}}, Boundary) ->
+%% @doc create a generic multipart header
+mp_header(Headers, Boundary) ->
+    iolist_to_binary([<<"\r\n--", Boundary/binary, "\r\n">>,
+                      hackney_headers:to_binary(Headers)]).
+
+%% @doc return the boundary ennding a multipart
+mp_eof(Boundary) ->
+    <<"\r\n--",  Boundary/binary, "--">>.
+
+%% @doc get the size of a mp stream. Useful to calculate the
+%% content-length of a full multipart stream and send it as an identity
+%% transfer-encoding instead of chunked so any server can handle it.
+len_mp_stream(Parts, Boundary) ->
+    Size = lists:foldl(fun
+                ({file, Path}, AccSize) ->
+                    {MpHeader, Len} = mp_file_header({file, Path}, Boundary),
+                    AccSize + byte_size(MpHeader) + Len;
+                ({file, Path, ExtraHeaders}, AccSize) ->
+                    {MpHeader, Len} = mp_file_header({file, Path,
+                                                      ExtraHeaders}, Boundary),
+                    AccSize + byte_size(MpHeader) + Len;
+                ({file, Path, Disposition, ExtraHeaders}, AccSize) ->
+                    {MpHeader, Len} = mp_file_header({file, Path, Disposition,
+                                                      ExtraHeaders}, Boundary),
+                    AccSize + byte_size(MpHeader) + Len;
+                ({mp_mixed, Name, MixedBoundary}, AccSize) ->
+                    {MpHeader, _} = mp_mixed_header(Name, MixedBoundary),
+                    AccSize + byte_size(MpHeader) + byte_size(mp_eof(MixedBoundary));
+                ({Name, Len}, AccSize) ->
+                    {MpHeader, Len} = mp_data_header({Name, Len}, Boundary),
+                    AccSize + byte_size(MpHeader) + Len;
+                ({Name, Len, ExtraHeaders}, AccSize) ->
+                    {MpHeader, Len} = mp_data_header({Name, Len, ExtraHeaders},
+                                                     Boundary),
+                    AccSize + byte_size(MpHeader) + Len;
+                ({Name, Len, Disposition, ExtraHeaders}, AccSize) ->
+                    {MpHeader, Len} = mp_data_header({Name, Len, Disposition,
+                                                      ExtraHeaders}, Boundary),
+                    AccSize + byte_size(MpHeader) + Len
+            end, 0, Parts),
+    Size + byte_size(mp_eof(Boundary)).
+
+%% @doc return the mixed multipart header
+-spec mp_mixed_header(Name :: binary(), Boundary :: binary())  ->
+    {binary(), 0}.
+mp_mixed_header(Name, Boundary) ->
+    Headers = [{<<"Content-Disposition">>, <<"form-data">>,
+                [{<<"name">>, <<"\"", Name/binary, "\"">>}]},
+               {<<"Content-Type">>, <<"multipart/mixed">>,
+                [{<<"boundary">>, Boundary}]}],
+    {mp_header(Headers, Boundary), 0}.
+
+
+%% @doc return the multipart header for a file that will be sent later
+-spec mp_file_header({file, Path :: binary()} |
+                     {file, Path :: binary(),
+                      ExtraHeaders ::[{binary(), binary()}]},
+                     Boundary :: binary()) ->
+    {binary(), FileSize :: integer()}.
+mp_file_header({file, Path}, Boundary) ->
+    mp_file_header({file, Path, []}, Boundary);
+mp_file_header({file, Path, ExtraHeaders}, Boundary) ->
+    FName = hackney_bstr:to_binary(filename:basename(Path)),
+    Disposition = {<<"file">>, [{<<"filename">>,
+                                <<"\"", FName/binary, "\"">>}]},
+    mp_file_header({file, Path, Disposition, ExtraHeaders}, Boundary);
+mp_file_header({file, Path, {Disposition, Params}, ExtraHeaders}, Boundary) ->
+    CType = hackney_bstr:content_type(Path),
+    Len = filelib:file_size(Path),
+    Headers = [{<<"Content-Disposition">>, Disposition, Params},
+               {<<"Content-Type">>, CType},
+               {<<"Content-Length">>, Len}] ++ ExtraHeaders,
+    BinHeader = mp_header(Headers, Boundary),
+    {BinHeader, Len}.
+
+%% @doc return the multipart header for a data
+-spec mp_data_header({Name:: binary(), DataLen :: integer()} |
+                     {Name:: binary(), DataLen :: integer(),
+                      ExtraHeaders ::[{binary(), binary()}]},
+                     Boundary :: binary()) ->
+    {binary(), DataLen :: integer()}.
+mp_data_header({Name, Len}, Boundary) ->
+    mp_data_header({Name, Len, []}, Boundary);
+mp_data_header({Name, Len, ExtraHeaders}, Boundary) ->
+    Disposition = {<<"form_data">>, [{<<"name">>,
+                                      <<"\"", Name/binary, "\"">>}]},
+    mp_data_header({Name, Len, Disposition, ExtraHeaders}, Boundary);
+mp_data_header({Name, Len, {Disposition, Params}, ExtraHeaders}, Boundary) ->
     CType = hackney_bstr:content_type(Name),
-    encode({Id, {file, Name, Content, CType}}, Boundary);
-encode({Id, {file, Name, Content, CType}}, Boundary) ->
-    Field = field(Id),
-    Parts = [
-        <<"--", Boundary/binary>>,
-        <<"Content-Disposition: form-data; name=\"",
-            Field/binary, "\"; filename=\"", Name/binary, "\"">>,
-        <<"Content-Type: ", CType/binary >>,
-        <<>>, Content, <<>>],
-    hackney_bstr:join(Parts, <<"\r\n">>);
-encode({Id, Value}, Boundary) ->
-    Field = field(Id),
-    Parts = [
-        <<"--", Boundary/binary>>,
-        <<"Content-Disposition: form-data; name=\"", Field/binary, "\"">>,
-        <<"Content-Type: application/octet-stream">>,
-        <<>>, Value, <<>>],
-    hackney_bstr:join(Parts, <<"\r\n">>).
-
-mp_header(Field, FileName, CType, Boundary) ->
-    FileName1 = hackney_bstr:to_binary(FileName),
-    Parts = [
-            <<"--", Boundary/binary>>,
-            <<"Content-Disposition: form-data; name=\"", Field/binary, "\"; filename=\"", FileName1/binary, "\"">>,
-            <<"Content-Type: ", CType/binary >>, <<>>, <<>>],
-    hackney_bstr:join(Parts, <<"\r\n">>).
-
-field(V) when is_list(V) ->
-    list_to_binary(V);
-field(V) when is_atom(V) ->
-    atom_to_binary(V, utf8);
-field(V) when is_integer(V) ->
-    list_to_binary(integer_to_list(V));
-field(V) when is_binary(V) ->
-    V.
+    Headers = [{<<"Content-Disposition">>, Disposition, Params},
+               {<<"Content-Type">>, CType},
+               {<<"Content-Length">>, Len}] ++ ExtraHeaders,
+    BinHeader = mp_header(Headers, Boundary),
+    {BinHeader, Len}.
 
 %% internal functions
 %%
@@ -116,14 +231,6 @@ unique(Size, Acc) when size(Acc) == Size -> Acc;
 unique(Size, Acc) ->
   Random = $a + random:uniform($z - $a),
   unique(Size, <<Acc/binary, Random>>).
-
-encode_form([], Boundary, Acc) ->
-    CType = <<"multipart/form-data; boundary=", Boundary/binary>>,
-    Lines = <<Acc/binary, "--", Boundary/binary, "--", "\r\n">>,
-    {erlang:size(Lines), CType, Lines};
-encode_form([C | R], Boundary, Acc) ->
-    Field = encode(C, Boundary),
-    encode_form(R, Boundary, iolist_to_binary([Acc, Field])).
 
 decode_form1(eof, Acc) ->
     {ok, lists:reverse(Acc)};

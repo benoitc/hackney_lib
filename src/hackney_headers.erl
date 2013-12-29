@@ -25,6 +25,9 @@
 -export([header_value/2]).
 -export([parse/2]).
 -export([content_type/1]).
+-export([content_disposition/1]).
+
+-type disposition() :: {binary(), [{binary(), binary()}]}.
 
 
 %% @doc initialise an header dict
@@ -255,6 +258,20 @@ content_type(Data) ->
                             end;
                         (_Rest2, _) ->
                             {error, badarg}
+                    end)
+        end).
+
+%% @doc Parse a content disposition.
+%% @todo Parse the MIME header instead of the HTTP one.
+-spec content_disposition(binary()) -> disposition().
+content_disposition(Data) ->
+    hackney_bstr:token_ci(Data, fun
+            (_Rest, <<>>) ->
+                {error, badarg};
+            (Rest, Disposition) ->
+                hackney_bstr:params(Rest, fun
+                        (<<>>, Params) -> {Disposition, Params};
+                        (_Rest2, _) -> {error, badarg}
                     end)
         end).
 
