@@ -132,8 +132,8 @@ make_header(Name, Value, Params) ->
 %% @doc join value and params in a binary
 header_value(Value, Params) ->
     Params1 = lists:foldl(fun({K, V}, Acc) ->
-                    K1 = hackney_url:urlencode(K),
-                    V1 = hackney_url:urlencode(V),
+                    K1 = hackney_bstr:to_binary(K),
+                    V1 = hackney_bstr:to_binary(V),
                     ParamStr = << K1/binary, "=", V1/binary  >>,
                     [ParamStr | Acc]
             end, [], Params),
