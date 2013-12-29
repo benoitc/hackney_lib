@@ -16,10 +16,13 @@
          to_list/1,
          get_value/2, get_value/3,
          store/3,
-         insert/3,
+         insert/3, insert/4,
          delete/2,
          fold/3]).
 
+-export([to_binary/1]).
+-export([make_header/2, make_header/3]).
+-export([header_value/2]).
 -export([parse/2]).
 -export([content_type/1]).
 
@@ -32,21 +35,28 @@ new({dict, _}=D) ->
     D;
 
 new(Headers) when is_list(Headers) ->
-    lists:foldl(fun({K, V}, D) ->
-                insert(K, V, D)
+    lists:foldl(fun
+            ({K, V}, D) ->
+                insert(K, V, D);
+            ({K, V, P}, D) ->
+                insert(K, header_value(V, P), D)
         end, dict:new(), Headers).
 
 %% @doc extend the headers with a new list of `{Key, Value}' pair.
 update(Headers, KVs) ->
-    lists:foldl(fun({K,_V}=KV, D) ->
-                dict:store(hackney_bstr:to_lower(K), KV, D)
+    lists:foldl(fun
+            ({K,_V}=KV, D) ->
+                dict:store(hackney_bstr:to_lower(K), KV, D);
+            ({K, V, P}, D) ->
+                V1 = header_value(V, P),
+                dict:store(hackney_bstr:to_lower(K), {K, V1}, D)
         end, Headers, KVs).
 
 %% convert the header to a list
 to_list(Headers) ->
-    dict:fold(fun(_K, KV, Acc) ->
+    lists:reverse(dict:fold(fun(_K, KV, Acc) ->
                     [KV | Acc]
-            end, [], Headers).
+            end, [], Headers)).
 
 %% @doc get the value of the header
 get_value(Key, Headers) ->
@@ -77,6 +87,10 @@ insert(Key, Value, Headers) ->
     end,
     dict:store(Key1, {Key, Value1}, Headers).
 
+%% @doc same as `insert/3' but allows to add params to the header value.
+insert(Key, Value, Params, Headers) ->
+    insert(Key, header_value(Value, Params), Headers).
+
 %% @doc Delete the header corresponding to key if it is present.
 delete(Key, Headers) ->
     dict:erase(hackney_bstr:to_lower(Key), Headers).
@@ -88,6 +102,39 @@ fold(Fun, Acc0, Headers) ->
     end,
     dict:fold(Wrapper, Acc0, Headers).
 
+%% @doc return all the headers as a binary that can be sent over the
+%% wire.
+to_binary(Headers) when is_list(Headers) ->
+    HeadersList = lists:foldl(fun
+                ({Name, Value}, Acc) ->
+                    [make_header(Name, Value) | Acc];
+                ({Name, Value, Params}, Acc) ->
+                    [make_header(Name, Value, Params) | Acc]
+            end, [], Headers),
+    iolist_to_binary([
+            hackney_bstr:join(lists:reverse(HeadersList), <<"\r\n">>),
+            <<"\r\n\r\n">>]);
+to_binary(Headers) ->
+    to_binary(to_list(Headers)).
+
+%% @doc Create a binary header
+make_header(Name, Value) ->
+    Value1 = hackney_bstr:to_binary(Value),
+    << Name/binary, ": ", Value1/binary >>.
+
+make_header(Name, Value, Params) ->
+    Value1 = header_value(hackney_bstr:to_binary(Value), Params),
+    << Name/binary, ": ", Value1/binary >>.
+
+%% @doc join value and params in a binary
+header_value(Value, Params) ->
+    Params1 = lists:foldl(fun({K, V}, Acc) ->
+                    K1 = hackney_url:urlencode(K),
+                    V1 = hackney_url:urlencode(V),
+                    ParamStr = << K1/binary, "=\"", V1/binary, "\"" >>,
+                    [ParamStr | Acc]
+            end, [], Params),
+    hackney_bstr:join([Value] ++ lists:reverse(Params1), "; ").
 
 %% @doc Semantically parse headers.
 %%
@@ -99,7 +146,7 @@ fold(Fun, Acc0, Headers) ->
 parse(Name, Headers) when is_list(Headers) ->
     parse(Name, new(Headers));
 parse(Name, Headers) ->
-    parse(Name, Headers, header_default(Name)).
+    parse(hackney_bstr:to_lower(Name), Headers, header_default(Name)).
 
 
 %% @doc Semantically parse headers.
