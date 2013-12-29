@@ -134,7 +134,7 @@ header_value(Value, Params) ->
     Params1 = lists:foldl(fun({K, V}, Acc) ->
                     K1 = hackney_url:urlencode(K),
                     V1 = hackney_url:urlencode(V),
-                    ParamStr = << K1/binary, "=\"", V1/binary, "\"" >>,
+                    ParamStr = << K1/binary, "=", V1/binary  >>,
                     [ParamStr | Acc]
             end, [], Params),
     hackney_bstr:join([Value] ++ lists:reverse(Params1), "; ").
