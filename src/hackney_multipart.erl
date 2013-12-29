@@ -141,6 +141,15 @@ mp_eof(Boundary) ->
 %% @doc get the size of a mp stream. Useful to calculate the
 %% content-length of a full multipart stream and send it as an identity
 %% transfer-encoding instead of chunked so any server can handle it.
+%%
+%% Calculated Parts can be under the form:
+%%  - `{file, Path}' : to send a file
+%%  - `{file, Path, ExtraHeaders}' : to send a file with extra headers
+%%  - `{mp_mixed, Name, Boundart}' to send a mixed multipart.
+%%  multipart boundary.
+%%  - `{Name, DataLen}': to send a custom content as a part
+%%  - `{Name, DataLen, ExtraHeaders}': the same as above but with extra
+%%  headers.
 len_mp_stream(Parts, Boundary) ->
     Size = lists:foldl(fun
                 ({file, Path}, AccSize) ->
