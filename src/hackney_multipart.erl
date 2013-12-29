@@ -223,7 +223,7 @@ mp_file_header({file, Path, {Disposition, Params}, ExtraHeaders}, Boundary) ->
 mp_data_header({Name, Len}, Boundary) ->
     mp_data_header({Name, Len, []}, Boundary);
 mp_data_header({Name, Len, ExtraHeaders}, Boundary) ->
-    Disposition = {<<"form_data">>, [{<<"name">>,
+    Disposition = {<<"form-data">>, [{<<"name">>,
                                       <<"\"", Name/binary, "\"">>}]},
     mp_data_header({Name, Len, Disposition, ExtraHeaders}, Boundary);
 mp_data_header({Name, Len, {Disposition, Params}, ExtraHeaders}, Boundary) ->
