@@ -136,7 +136,7 @@ mp_header(Headers, Boundary) ->
 
 %% @doc return the boundary ennding a multipart
 mp_eof(Boundary) ->
-    <<"\r\n--",  Boundary/binary, "--">>.
+    <<"--",  Boundary/binary, "--">>.
 
 %% @doc get the size of a mp stream. Useful to calculate the
 %% content-length of a full multipart stream and send it as an identity
