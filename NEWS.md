@@ -1,5 +1,16 @@
 # NEWS
 
+0.2.2 - 2013/12/30
+------------------
+
+- add `hackney_multipart:part/3`: to create a full part with custom
+  headers.
+- fix `hackney_multipart:decode_form/2`
+- fix `hackney_multipart:encode_form/2` : do not url encode headers
+  properties and fix typoe (s/form_data/form-data)
+- fix `hackney_multipart:mp_file_header/2`: use the correct
+  default content-disposition for form-data.
+
 0.2.1 - 2013/12/29
 ------------------
 

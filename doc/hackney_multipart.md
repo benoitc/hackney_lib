@@ -139,7 +139,7 @@ part_result() = <a href="#type-headers">headers()</a> | eof
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#boundary-0">boundary/0</a></td><td></td></tr><tr><td valign="top"><a href="#decode_form-2">decode_form/2</a></td><td>decode a multipart form.</td></tr><tr><td valign="top"><a href="#decode_form-3">decode_form/3</a></td><td></td></tr><tr><td valign="top"><a href="#encode_form-1">encode_form/1</a></td><td>encode a list of parts a multiart form.</td></tr><tr><td valign="top"><a href="#encode_form-2">encode_form/2</a></td><td></td></tr><tr><td valign="top"><a href="#len_mp_stream-2">len_mp_stream/2</a></td><td>get the size of a mp stream.</td></tr><tr><td valign="top"><a href="#mp_data_header-2">mp_data_header/2</a></td><td>return the multipart header for a data.</td></tr><tr><td valign="top"><a href="#mp_eof-1">mp_eof/1</a></td><td>return the boundary ennding a multipart.</td></tr><tr><td valign="top"><a href="#mp_file_header-2">mp_file_header/2</a></td><td>return the multipart header for a file that will be sent later.</td></tr><tr><td valign="top"><a href="#mp_header-2">mp_header/2</a></td><td>create a generic multipart header.</td></tr><tr><td valign="top"><a href="#mp_mixed_header-2">mp_mixed_header/2</a></td><td>return the mixed multipart header.</td></tr><tr><td valign="top"><a href="#parser-1">parser/1</a></td><td>Return a multipart parser for the given boundary.</td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#boundary-0">boundary/0</a></td><td></td></tr><tr><td valign="top"><a href="#decode_form-2">decode_form/2</a></td><td>decode a multipart form.</td></tr><tr><td valign="top"><a href="#encode_form-1">encode_form/1</a></td><td>encode a list of parts a multiart form.</td></tr><tr><td valign="top"><a href="#encode_form-2">encode_form/2</a></td><td></td></tr><tr><td valign="top"><a href="#len_mp_stream-2">len_mp_stream/2</a></td><td>get the size of a mp stream.</td></tr><tr><td valign="top"><a href="#mp_data_header-2">mp_data_header/2</a></td><td>return the multipart header for a data.</td></tr><tr><td valign="top"><a href="#mp_eof-1">mp_eof/1</a></td><td>return the boundary ennding a multipart.</td></tr><tr><td valign="top"><a href="#mp_file_header-2">mp_file_header/2</a></td><td>return the multipart header for a file that will be sent later.</td></tr><tr><td valign="top"><a href="#mp_header-2">mp_header/2</a></td><td>create a generic multipart header.</td></tr><tr><td valign="top"><a href="#mp_mixed_header-2">mp_mixed_header/2</a></td><td>return the mixed multipart header.</td></tr><tr><td valign="top"><a href="#parser-1">parser/1</a></td><td>Return a multipart parser for the given boundary.</td></tr><tr><td valign="top"><a href="#part-3">part/3</a></td><td>create a part.</td></tr></table>
 
 
 <a name="functions"></a>
@@ -166,13 +166,6 @@ decode_form(Boundary::binary(), Body::binary()) -&gt; {ok, list()} | {error, ter
 
 
 decode a multipart form.
-<a name="decode_form-3"></a>
-
-### decode_form/3 ###
-
-`decode_form(Boundary, Body, Acc) -> any()`
-
-
 <a name="encode_form-1"></a>
 
 ### encode_form/1 ###
@@ -282,3 +275,10 @@ parser(Boundary::binary()) -&gt; <a href="#type-part_parser">part_parser()</a>
 
 
 Return a multipart parser for the given boundary.
+<a name="part-3"></a>
+
+### part/3 ###
+
+`part(Content, Headers, Boundary) -> any()`
+
+create a part
