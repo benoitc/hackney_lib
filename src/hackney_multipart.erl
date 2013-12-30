@@ -171,12 +171,27 @@ len_mp_stream(Parts, Boundary) ->
                     {MpHeader, _} = mp_mixed_header(Name, MixedBoundary),
                     AccSize + byte_size(MpHeader) + 2 +
                     byte_size(mp_eof(MixedBoundary));
+                ({Name, Bin}, AccSize) when is_binary(Bin) ->
+                    Len = byte_size(Bin),
+                    {MpHeader, Len} = mp_data_header({Name, Len}, Boundary),
+                    AccSize + byte_size(MpHeader) + Len + 2;
                 ({Name, Len}, AccSize) ->
                     {MpHeader, Len} = mp_data_header({Name, Len}, Boundary),
+                    AccSize + byte_size(MpHeader) + Len + 2;
+                ({Name, Bin, ExtraHeaders}, AccSize) when is_binary(Bin) ->
+                    Len = byte_size(Bin),
+                    {MpHeader, Len} = mp_data_header({Name, Len, ExtraHeaders},
+                                                     Boundary),
                     AccSize + byte_size(MpHeader) + Len + 2;
                 ({Name, Len, ExtraHeaders}, AccSize) ->
                     {MpHeader, Len} = mp_data_header({Name, Len, ExtraHeaders},
                                                      Boundary),
+                    AccSize + byte_size(MpHeader) + Len + 2;
+                ({Name, Bin, Disposition, ExtraHeaders}, AccSize)
+                        when is_binary(Bin) ->
+                    Len = byte_size(Bin),
+                    {MpHeader, Len} = mp_data_header({Name, Len, Disposition,
+                                                      ExtraHeaders}, Boundary),
                     AccSize + byte_size(MpHeader) + Len + 2;
                 ({Name, Len, Disposition, ExtraHeaders}, AccSize) ->
                     {MpHeader, Len} = mp_data_header({Name, Len, Disposition,
