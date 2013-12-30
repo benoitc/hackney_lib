@@ -21,6 +21,7 @@
 
 -export([mp_header/2,
          mp_eof/1,
+         part/3,
          len_mp_stream/2,
          mp_file_header/2,
          mp_mixed_header/2,
@@ -135,6 +136,12 @@ mp_header(Headers, Boundary) ->
 mp_eof(Boundary) ->
     <<"--",  Boundary/binary, "--">>.
 
+%% @doc create a part
+part(Content, Headers, Boundary) ->
+    BinHeaders = hackney_headers:to_binary(Headers),
+    <<"--", Boundary/binary, "\r\n", BinHeaders/binary, Content/binary,
+      "\r\n" >>.
+
 %% @doc get the size of a mp stream. Useful to calculate the
 %% content-length of a full multipart stream and send it as an identity
 %% transfer-encoding instead of chunked so any server can handle it.
@@ -199,8 +206,9 @@ mp_file_header({file, Path}, Boundary) ->
     mp_file_header({file, Path, []}, Boundary);
 mp_file_header({file, Path, ExtraHeaders}, Boundary) ->
     FName = hackney_bstr:to_binary(filename:basename(Path)),
-    Disposition = {<<"file">>, [{<<"filename">>,
-                                <<"\"", FName/binary, "\"">>}]},
+    Disposition = {<<"form-data">>,
+                   [{<<"name">>, <<"file">>},
+                    {<<"filename">>, <<"\"", FName/binary, "\"">>}]},
     mp_file_header({file, Path, Disposition, ExtraHeaders}, Boundary);
 mp_file_header({file, Path, {Disposition, Params}, ExtraHeaders}, Boundary) ->
     CType = hackney_bstr:content_type(Path),
