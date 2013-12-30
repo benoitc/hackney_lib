@@ -15,7 +15,7 @@
 -include("hackney_lib.hrl").
 
 -export([encode_form/1, encode_form/2,
-         decode_form/2, decode_form/3,
+         decode_form/2,
          boundary/0,
          parser/1]).
 
@@ -113,11 +113,8 @@ encode_form(Parts, Boundary) ->
 %% @doc decode a multipart form.
 -spec decode_form(binary(), binary()) -> {ok, list()} | {error, term()}.
 decode_form(Boundary, Body) ->
-    decode_form(Boundary, Body, []).
-
-decode_form(Boundary, Body, Acc) ->
     Parser = parser(Boundary),
-    decode_form1(Parser(Body), Acc).
+    decode_form1(Parser(Body), [[]]).
 
 %% @doc Return a multipart parser for the given boundary.
 -spec parser(binary()) -> part_parser().
@@ -131,8 +128,8 @@ boundary() ->
 
 %% @doc create a generic multipart header
 mp_header(Headers, Boundary) ->
-    iolist_to_binary([<<"--", Boundary/binary, "\r\n">>,
-                      hackney_headers:to_binary(Headers)]).
+    BinHeaders = hackney_headers:to_binary(Headers),
+    <<"--", Boundary/binary, "\r\n", BinHeaders/binary >>.
 
 %% @doc return the boundary ennding a multipart
 mp_eof(Boundary) ->
@@ -242,6 +239,8 @@ unique(Size, Acc) ->
   Random = $a + random:uniform($z - $a),
   unique(Size, <<Acc/binary, Random>>).
 
+decode_form1(eof, [[]|Acc]) ->
+    {ok, lists:reverse(Acc)};
 decode_form1(eof, Acc) ->
     {ok, lists:reverse(Acc)};
 decode_form1({headers, Headers, Fun}, [Last | Rest]) ->
@@ -256,6 +255,10 @@ decode_form1({body, Bin, Fun}, [Last | Rest]) ->
                              {body, << Body/binary, Bin/binary >>})
     end,
     decode_form1(Fun(), [Last1| Rest]);
+decode_form1({end_of_part, Fun}, [Last | Rest]) ->
+    Headers = proplists:get_value(headers, Last, []),
+    Body = proplists:get_value(body, Last, []),
+    decode_form1(Fun(), [[], {Headers, Body} | Rest]);
 decode_form1({more, Fun}, Acc) ->
     {error, {more, Fun, Acc}}.
 
