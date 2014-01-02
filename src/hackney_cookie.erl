@@ -41,7 +41,7 @@ setcookie(Name, Value, Opts) ->
             UTC = calendar:universal_time(),
             Secs = calendar:datetime_to_gregorian_seconds(UTC),
             Expires = calendar:gregorian_seconds_to_datetime(Secs + MaxAge),
-            [<<"; Expires=">>, cow_date:rfc2109(Expires),
+            [<<"; Expires=">>, hackney_date:date_to_rfc2109(Expires),
              <<"; Max-Age=">>, integer_to_list(MaxAge)]
     end,
     DomainBin = case lists:keyfind(domain, 1, Opts) of
