@@ -325,7 +325,7 @@ alpha(<<>>, Fun, Acc) ->
 alpha(<< C, Rest/binary >>, Fun, Acc)
                 when C >= $a andalso C =< $z;
                          C >= $A andalso C =< $Z ->
-        C2 = cowboy_bstr:char_to_lower(C),
+        C2 = char_to_lower(C),
         alpha(Rest, Fun, << Acc/binary, C2 >>);
 alpha(Data, Fun, Acc) ->
         Fun(Data, Acc).
