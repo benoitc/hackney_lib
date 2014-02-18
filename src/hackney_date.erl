@@ -12,6 +12,7 @@
 -export([date_to_rfc2109/1]).
 
 -export([parse_http_date/1,
+         rfc2109_to_date/1,
          rfc1123_to_date/1,
          rfc850_to_date/1,
          asctime_to_date/1]).

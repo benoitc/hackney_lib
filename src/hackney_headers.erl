@@ -7,7 +7,7 @@
 %%% Copyright (c) 2011-2013, Loïc Hoguin <essen@ninenines.eu>
 %%% Copyright (c) 2011, Anthony Ramine <nox@dev-extend.eu>
 
-%% @doc module to manipulate HTT headers
+%% @doc module to manipulate HTTP headers
 %%
 -module(hackney_headers).
 
