@@ -7,7 +7,7 @@
 * [Function Details](#functions)
 
 
-module to manipulate HTT headers.
+module to manipulate HTTP headers.
 
 
 <a name="types"></a>

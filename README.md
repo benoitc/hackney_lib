@@ -2,9 +2,9 @@
 
 # hackney_lib - Web toolkit #
 
-Copyright (c) 2013 Benoît Chesneau.
+Copyright (c) 2014 Benoît Chesneau.
 
-__Version:__ 0.2.2
+__Version:__ 0.2.3
 
 # hackney
 
