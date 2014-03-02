@@ -1,5 +1,13 @@
 # NEWS
 
+0.2.3 - 2014/03/02
+------------------
+
+- add tests
+- fix build for R17
+- fix hackney_bstr
+- fix hackney_date
+
 0.2.2 - 2013/12/30
 ------------------
 

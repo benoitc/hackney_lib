@@ -1,10 +1,10 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of hackney released under the Apache 2 license.
+%%% This file is part of hackney_lib released under the Apache 2 license.
 %%% See the NOTICE for more information.
 %%%
 %% Copyright (c) 2011-2012, Loïc Hoguin <essen@ninenines.eu>
-%%% Copyright (c) 2012-2013 Benoît Chesneau <benoitc@e-engura.org>
+%%% Copyright (c) 2012-2014 Benoît Chesneau <benoitc@e-engura.org>
 %%%
 
 -module(hackney_date).

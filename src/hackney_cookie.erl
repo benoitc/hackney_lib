@@ -1,12 +1,12 @@
 %%% -*- erlang -*-
 %%%
-%%% This file is part of hackney released under the Apache 2 license.
+%%% This file is part of hackney_lib released under the Apache 2 license.
 %%% See the NOTICE for more information.
 %%%
 %%% Copyright 2007 Mochi Media, Inc.
 %%% Copyright 2011 Thomas Burdick <thomas.burdick@gmail.com>
 %%% Copyright 2013, Loïc Hoguin <essen@ninenines.eu>
-%%% Copyright 2013, Benoit Chesneau
+%%% Copyright 2013-2014, Benoit Chesneau
 %%%
 -module(hackney_cookie).
 
