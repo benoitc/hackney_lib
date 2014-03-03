@@ -250,3 +250,15 @@ fix_path_test_() ->
             {<<"path1/path2/">>, <<"path1/path2">>}
             ],
     [{V, fun() -> R = hackney_url:fix_path(V) end} || {V, R} <- Tests].
+
+pathencode_test_() ->
+    %% {Value, Result}.
+    Tests = [
+            {<<"/path1/path2">>, <<"/path1/path2">>},
+            {<<"/path1/path2%2fa">>, <<"/path1/path2%2fa">>},
+            {<<"/path1/path2%2fa%2fb">>, <<"/path1/path2%2fa%2fb">>},
+            {<<"/path1/path2%2test">>, <<"/path1/path2%252test">>}
+            ],
+    [{V, fun() -> R = hackney_url:pathencode(V) end} || {V, R} <- Tests].
+
+
