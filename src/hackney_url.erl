@@ -19,7 +19,8 @@
          parse_qs/1,
          qs/1,
          make_url/3,
-         fix_path/1]).
+         fix_path/1,
+         pathencode/1]).
 
 -include("hackney_lib.hrl").
 
@@ -306,3 +307,60 @@ fix_path(Path) ->
         <<"/">> -> binary:part(Path, {0, size(Path) - 1});
         _ -> Path
     end.
+
+
+
+
+%% @doc encode a URL path
+%% @equiv pathencode(Bin, [])
+-spec pathencode(binary()) -> binary().
+pathencode(Bin) ->
+    Parts = re:split(hackney_bstr:to_binary(Bin), <<"/">>,
+                     [{return, binary}]),
+	do_partial_pathencode(Parts, []).
+
+do_partial_pathencode([], Acc) ->
+    hackney_bstr:join(lists:reverse(Acc), <<"/">>);
+do_partial_pathencode([Part | Rest], Acc) ->
+    do_partial_pathencode(Rest, [partial_pathencode(Part, <<>>) | Acc]).
+
+
+
+partial_pathencode(<<C, Rest/binary>> = Bin, Acc) ->
+    if	C >= $0, C =< $9 -> partial_pathencode(Rest, <<Acc/binary, C>>);
+        C >= $A, C =< $Z -> partial_pathencode(Rest, <<Acc/binary, C>>);
+        C >= $a, C =< $z -> partial_pathencode(Rest, <<Acc/binary, C>>);
+        C =:= $.; C =:= $-; C =:= $~; C =:= $_ ->
+            partial_pathencode(Rest, <<Acc/binary, C>>);
+        C =:= $% ->
+            %% special case, when a % is passed to the path, check if
+            %% it's a valid escape sequence. If the sequence is valid we
+            %% don't try to encode it and continue, else, we encode it.
+            %% the behaviour is similar to the one you find in chrome:
+            %% http://src.chromium.org/viewvc/chrome/trunk/src/url/url_canon_path.cc
+            case Bin of
+                << $%, H, L, Rest1/binary >> ->
+                    G = unhex(H),
+	                M = unhex(L),
+	                if	G =:= error; M =:= error ->
+                        H1 = C band 16#F0 bsr 4, L1 = C band 16#0F,
+                        H2 = tohexl(H1),
+                        L2 = tohexl(L1),
+                        partial_pathencode(Rest, <<Acc/binary, $%, H2, L2>>);
+                    true ->
+                        partial_pathencode(Rest1, <<Acc/binary, $%, H, L>>)
+                    end;
+                _ ->
+                    H1 = C band 16#F0 bsr 4, L1 = C band 16#0F,
+                    H2 = tohexl(H1),
+                    L2 = tohexl(L1),
+                    partial_pathencode(Rest, <<Acc/binary, $%, H2, L2>>)
+                end;
+        true ->
+            H = C band 16#F0 bsr 4, L = C band 16#0F,
+            H1 = tohexl(H),
+            L1 = tohexl(L),
+            partial_pathencode(Rest, <<Acc/binary, $%, H1, L1>>)
+    end;
+partial_pathencode(<<>>, Acc) ->
+    Acc.
