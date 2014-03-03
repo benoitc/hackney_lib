@@ -1,5 +1,11 @@
 # NEWS
 
+0.2.4 - 2014/03/03
+------------------
+
+- add `hackney_url:pathencode/1` to encode the path and follow the IDN
+  specs.  http://www.w3.org/International/articles/idn-and-iri/
+
 0.2.3 - 2014/03/02
 ------------------
 
