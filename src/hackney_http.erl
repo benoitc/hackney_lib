@@ -55,22 +55,10 @@
 -export([parser/0, parser/1]).
 -export([execute/1, execute/2]).
 -export([get/2]).
+-export([parse_response_line/2]).
 
--record(hparser, {type=auto,
-                  max_line_length=4096,
-                  max_empty_lines=10,
-                  empty_lines=0,
-                  state=on_first_line,
-                  buffer = <<>>,
-                  version,
-                  method,
-                  partial_headers=[],
-                  clen,
-                  te,
-                  connection,
-                  ctype,
-                  location,
-                  body_state=waiting}).
+-include("hackney_lib.hrl").
+
 
 -opaque parser() :: #hparser{}.
 -export_type([parser/0]).
@@ -215,7 +203,12 @@ parse_response_line(<< "HTTP/", High, ".", Low, " ", Status/binary >>, St)
         when High >= $0, High =< $9, Low >= $0, Low =< $9 ->
 
     Version = { High -$0, Low - $0},
-    [StatusCode, Reason] = binary:split(Status, <<" ">>, [trim]),
+    [StatusCode, Reason] = case binary:split(Status, <<" ">>, [trim]) of
+        [Code, AReason] ->
+            [Code, AReason];
+        [Code] ->
+            [Code, <<"">>]
+    end,
     StatusInt = list_to_integer(binary_to_list(StatusCode)),
 
     NState = St#hparser{type=response,
