@@ -300,6 +300,8 @@ make_url(Url, PathParts, Query) when is_binary(Query) ->
 
 fix_path(Path) when is_list(Path) ->
     fix_path(list_to_binary(Path));
+fix_path(<<>>) -> 
+    <<>>;
 fix_path(<<"/", Path/binary>>) ->
     fix_path(Path);
 fix_path(Path) ->
