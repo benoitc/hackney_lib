@@ -204,8 +204,8 @@ parse_response_line(<< "HTTP/", High, ".", Low, " ", Status/binary >>, St)
 
     Version = { High -$0, Low - $0},
     [StatusCode, Reason] = case binary:split(Status, <<" ">>, [trim]) of
-        [Code, AReason] ->
-            [Code, AReason];
+        [Code, Reason1] ->
+            [Code, Reason1];
         [Code] ->
             [Code, <<"">>]
     end,
