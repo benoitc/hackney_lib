@@ -286,7 +286,7 @@ make_url(Url, Path, Query) when is_binary(Path) ->
     make_url(Url, [Path], Query);
 make_url(Url, PathParts, Query) when is_binary(Query) ->
     %% create path
-    PathParts1 = [fix_path(P) || P <- PathParts, P /= "/" orelse P /= <<"/">>],
+    PathParts1 = [fix_path(P) || P <- PathParts, P /= "", P /= "/" orelse P /= <<"/">>],
     Path = hackney_bstr:join([<<>> | PathParts1], <<"/">>),
 
     %% initialise the query
