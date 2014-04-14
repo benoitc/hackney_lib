@@ -18,11 +18,13 @@
          params/2,
          parameterized_tokens/1,
          whitespace/2,
-         digits/1,
+         digits/1, digits/2, digits/3,
          alpha/2,
          word/2]).
 
 -export([content_type/1]).
+
+-export([quoted_string/2]).
 
 to_binary(V) when is_list(V) ->
     list_to_binary(V);
@@ -352,8 +354,7 @@ content_type(Name) ->
     end.
 
 
-%% internals
-%%
+
 -spec quoted_string(binary(), fun()) -> any().
 quoted_string(<< $", Rest/binary >>, Fun) ->
         quoted_string(Rest, Fun, <<>>).
