@@ -339,7 +339,7 @@ parse_body(St=#hparser{body_state=waiting, te=TE, clen=Length,
 parse_body(#hparser{body_state=done, buffer=Buffer}) ->
 	{done, Buffer};
 parse_body(St=#hparser{buffer=Buffer, body_state={stream, _, _, _}})
-		when Buffer =/= <<>> ->
+		when byte_size(Buffer) > 0 ->
 	transfer_decode(Buffer, St#hparser{buffer= <<>>});
 parse_body(St) ->
     {more, St, <<>>}.
@@ -427,7 +427,7 @@ te_chunked(Data, _) ->
 	-> {ok, binary(), {non_neg_integer(), non_neg_integer()}}
 	| {done, binary(), non_neg_integer(), binary()}.
 te_identity(Data, {Streamed, Total})
-		when Streamed + byte_size(Data) < Total ->
+        when (Streamed + byte_size(Data)) < Total ->
 	{ok, Data, {Streamed + byte_size(Data), Total}};
 te_identity(Data, {Streamed, Total}) ->
 	Size = Total - Streamed,
