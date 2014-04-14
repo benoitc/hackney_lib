@@ -1,5 +1,12 @@
 # NEWS
 
+0.2.5 - 2014/04/14
+------------------
+
+- improve http response line parsing
+- handle response line without reason
+- fix `hackney_url:fix_path/1`
+
 0.2.4 - 2014/03/03
 ------------------
 
