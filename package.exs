@@ -66,6 +66,5 @@ miscellaneous modules  to play with HTTP and Web protocols",
                                  email: "a.dumbris@gmail.com"]],
                  maintainers: [[name: "Benoit Chesneau",
                                 email: "bchesneau@gmail.com"]],
-                 repositories: [[github: "benoitc/hackney_lib", tag:
-"0.2.4"]])
+                 repositories: [[github: "benoitc/hackney_lib", tag: "0.2.5"]])
 
