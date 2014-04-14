@@ -55,7 +55,7 @@
 -export([parser/0, parser/1]).
 -export([execute/1, execute/2]).
 -export([get/2]).
--export([parse_response_line/2]).
+-export([parse_response_version/2]).
 
 -include("hackney_lib.hrl").
 
@@ -193,30 +193,35 @@ match_eol(_, _) ->
 parse_response_line(#hparser{buffer=Buf}=St) ->
     case binary:split(Buf, <<"\r\n">>) of
         [Line, Rest] ->
-            parse_response_line(Line, St#hparser{buffer=Rest});
+            parse_response_version(Line, St#hparser{buffer=Rest});
         _ ->
             {error, bad_request}
     end.
 
 
-parse_response_line(<< "HTTP/", High, ".", Low, " ", Status/binary >>, St)
+parse_response_version(<< "HTTP/", High, ".", Low, $\s, Rest/binary >>, St)
         when High >= $0, High =< $9, Low >= $0, Low =< $9 ->
-
     Version = { High -$0, Low - $0},
-    [StatusCode, Reason] = case binary:split(Status, <<" ">>, [trim]) of
-        [Code, Reason1] ->
-            [Code, Reason1];
-        [Code] ->
-            [Code, <<"">>]
-    end,
+    parse_status(Rest, St, Version, <<>>);
+parse_response_version(_, _) ->
+     {error, bad_request}.
+
+parse_status(<< C, Rest/bits >>, St, Version, Acc) ->
+    case C of
+        $\r ->  {error, bad_request};
+        $\s -> parse_reason(Rest, St, Version, Acc);
+        _ -> parse_status(Rest, St, Version, << Acc/binary, C >>)
+    end.
+
+parse_reason(Reason, St, Version, StatusCode) ->
     StatusInt = list_to_integer(binary_to_list(StatusCode)),
 
     NState = St#hparser{type=response,
                         version=Version,
                         state=on_header,
                         partial_headers=[]},
-
     {response, Version, StatusInt, Reason, NState}.
+
 
 parse_request_line(#hparser{buffer=Buf}=St) ->
     parse_method(Buf, St, <<>>).
