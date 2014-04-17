@@ -13,8 +13,9 @@
 %%      Example:
 %%
 %% ```
-%% 1> mimetypes:extension(<<"c")>>.
+%% 1> mimetypes:extension(<<"c">>).
 %% <<"text/x-c">>
+%% '''
 -spec extension(binary()) -> binary().
 extension(Ext) ->
     extensions(Ext).
@@ -23,8 +24,9 @@ extension(Ext) ->
 %% Example:
 %%
 %% ```
-%% 1> hackney_mimetypes:filename("test.cpp").
-%% [<<"text/x-c">>]
+%% 1> hackney_mimetypes:filename(<<"test.cpp">>).
+%% <<"text/x-c">>
+%% '''
 -spec filename(file:filename_all()) -> binary().
 filename(Path) ->
 	case filename:extension(Path) of
@@ -39,6 +41,7 @@ filename(Path) ->
 %% ```
 %% 1> hackney_mimetypes:mime_to_exts(<<"text/plain">>).
 %% [<<"txt">>,<<"text">>,<<"conf">>,<<"def">>,<<"list">>,<<"log">>,<<"in">>]
+%% '''
 -spec mime_to_exts(binary()) -> [binary()].
 mime_to_exts(Mimetype) ->
     mimetypes(Mimetype).

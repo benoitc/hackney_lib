@@ -4,7 +4,7 @@
 
 Copyright (c) 2014 Benoît Chesneau.
 
-__Version:__ 0.2.5
+__Version:__ 0.3.0
 
 # hackney
 
@@ -113,6 +113,7 @@ $ make devclean ; # clean all files
 <tr><td><a href="http://github.com/benoitc/hackney_lib/blob/master/doc/hackney_date.md" class="module">hackney_date</a></td></tr>
 <tr><td><a href="http://github.com/benoitc/hackney_lib/blob/master/doc/hackney_headers.md" class="module">hackney_headers</a></td></tr>
 <tr><td><a href="http://github.com/benoitc/hackney_lib/blob/master/doc/hackney_http.md" class="module">hackney_http</a></td></tr>
+<tr><td><a href="http://github.com/benoitc/hackney_lib/blob/master/doc/hackney_mimetypes.md" class="module">hackney_mimetypes</a></td></tr>
 <tr><td><a href="http://github.com/benoitc/hackney_lib/blob/master/doc/hackney_multipart.md" class="module">hackney_multipart</a></td></tr>
 <tr><td><a href="http://github.com/benoitc/hackney_lib/blob/master/doc/hackney_url.md" class="module">hackney_url</a></td></tr></table>
 

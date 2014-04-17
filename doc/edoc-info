@@ -2,4 +2,4 @@
 {application,hackney_lib}.
 {packages,[]}.
 {modules,[hackney_bstr,hackney_cookie,hackney_date,hackney_headers,
-          hackney_http,hackney_multipart,hackney_url]}.
+          hackney_http,hackney_mimetypes,hackney_multipart,hackney_url]}.

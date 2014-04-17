@@ -67,7 +67,6 @@ gen:
 			print "];" \
 			}' \
 		| sort \
-		| uniq -w 25 \
 		>> $(GEN_OUT)
 	@echo "mimetypes(_) -> [<<>>]." >> $(GEN_OUT)
 	@cat $(GEN_SRC) \
