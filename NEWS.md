@@ -1,5 +1,11 @@
 # NEWS
 
+0.3.0 - 2013/04/17
+------------------
+
+- add `hackney_url:normalize/1` to normalize the encoding of an URL
+- add the `hackney_mimetypes` modules to manage mimetypes
+
 0.2.5 - 2014/04/14
 ------------------
 

@@ -1,6 +1,6 @@
 Expm.Package.new(name: "hackney_lib", description: "Web toolkit -
 miscellaneous modules  to play with HTTP and Web protocols",
-                 version: "0.2.5", keywords: ["web", "http","client", "server", "binary"],
+                 version: "0.3.0", keywords: ["web", "http","client", "server", "binary"],
                  dependencies: ["mimetypes"],
                  licenses: [[name: "Apache License, Version 2.0", file: "LICENSE"]],
                  contributors: [[name: "Adam Rutkowski",
@@ -66,5 +66,4 @@ miscellaneous modules  to play with HTTP and Web protocols",
                                  email: "a.dumbris@gmail.com"]],
                  maintainers: [[name: "Benoit Chesneau",
                                 email: "bchesneau@gmail.com"]],
-                 repositories: [[github: "benoitc/hackney_lib", tag: "0.2.5"]])
-
+                 repositories: [[github: "benoitc/hackney_lib", tag: "0.3.0"]])
