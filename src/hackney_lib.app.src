@@ -6,7 +6,7 @@
         {description, "Web toolkit"},
         {vsn, "0.3.0"},
         {registered, []},
-        {applications, [unicode, mimetypes]},
+        {applications, [unicode]},
         {included_applications, []},
         {env, []}
 ]}.
