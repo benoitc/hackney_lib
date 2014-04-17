@@ -226,7 +226,7 @@ mp_file_header({file, Path, ExtraHeaders}, Boundary) ->
                     {<<"filename">>, <<"\"", FName/binary, "\"">>}]},
     mp_file_header({file, Path, Disposition, ExtraHeaders}, Boundary);
 mp_file_header({file, Path, {Disposition, Params}, ExtraHeaders}, Boundary) ->
-    CType = hackney_bstr:content_type(Path),
+    CType = hackney_mimetypes:filename(Path),
     Len = filelib:file_size(Path),
     Headers = [{<<"Content-Disposition">>, Disposition, Params},
                {<<"Content-Type">>, CType},
@@ -247,7 +247,7 @@ mp_data_header({Name, Len, ExtraHeaders}, Boundary) ->
                                       <<"\"", Name/binary, "\"">>}]},
     mp_data_header({Name, Len, Disposition, ExtraHeaders}, Boundary);
 mp_data_header({Name, Len, {Disposition, Params}, ExtraHeaders}, Boundary) ->
-    CType = hackney_bstr:content_type(Name),
+    CType = hackney_mimetypes:filename(Name),
     Headers = [{<<"Content-Disposition">>, Disposition, Params},
                {<<"Content-Type">>, CType},
                {<<"Content-Length">>, Len}] ++ ExtraHeaders,

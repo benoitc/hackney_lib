@@ -22,8 +22,6 @@
          alpha/2,
          word/2]).
 
--export([content_type/1]).
-
 -export([quoted_string/2]).
 
 to_binary(V) when is_list(V) ->
@@ -341,19 +339,6 @@ word(Data, Fun) ->
                 fun (_Rest, <<>>) -> {error, badarg};
                         (Rest, Token) -> Fun(Rest, Token)
                 end).
-
-%% get content type
-%%
-%%
-content_type(Name) ->
-    case mimetypes:filename(Name) of
-        [CT | _] ->
-            CT;
-        CT when is_binary(CT) ->
-            CT
-    end.
-
-
 
 -spec quoted_string(binary(), fun()) -> any().
 quoted_string(<< $", Rest/binary >>, Fun) ->
