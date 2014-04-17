@@ -1,4 +1,4 @@
-%%% -*- erlang -*-
+%% -*- erlang -*-
 %%%
 %%% This file is part of hackney_lib released under the Apache 2 license.
 %%% See the NOTICE for more information.
@@ -20,7 +20,8 @@
          qs/1,
          make_url/3,
          fix_path/1,
-         pathencode/1]).
+         pathencode/1,
+         normalize/1]).
 
 -include("hackney_lib.hrl").
 
@@ -29,8 +30,12 @@
 %% @doc Parse an url and return a #hackney_url record.
 -spec parse_url(URL::binary()|list()) -> hackney_url().
 parse_url(URL) when is_list(URL) ->
-    parse_url(list_to_binary(URL));
-
+    case unicode:characters_to_binary(URL) of
+        URL1 when is_binary(URL1) ->
+            parse_url(URL1);
+        _ ->
+            parse_url(unicode:characters_to_binary(list_to_binary(URL)))
+    end;
 parse_url(<<"http://", Rest/binary>>) ->
     parse_url(Rest, #hackney_url{transport=hackney_tcp_transport,
                                          scheme=http});
@@ -55,6 +60,37 @@ parse_url(URL, S) ->
                                            fragment = Fragment})
     end.
 
+%% @doc Normalizes the encoding of a Url
+normalize(Url) when is_list(Url) orelse is_binary(Url) ->
+    normalize(parse_url(Url));
+normalize(#hackney_url{}=Url) ->
+    #hackney_url{scheme=Scheme,
+                 host = Host0,
+                 port = Port,
+                 netloc = Netloc0,
+                 path = Path} = Url,
+
+    {Host, Netloc} = case inet_parse:address(Host0) of
+        {ok, {_, _, _, _}} ->
+            {Host0, Netloc0};
+        {ok, {_, _, _, _, _, _, _, _}} ->
+            {Host0, Netloc0};
+        _ ->
+            Host1 = unicode:characters_to_list(
+                    urldecode(unicode:characters_to_binary(Host0))),
+
+            %% encode domain if needed
+            Host2 = idna:to_ascii(Host1),
+            Netloc1 = case {Scheme, Port} of
+                {http, 80} -> list_to_binary(Host2);
+                {https, 443} -> list_to_binary(Host2);
+                _ ->
+                    iolist_to_binary([Host2, ":", integer_to_list(Port)])
+            end,
+            {Host2, Netloc1}
+    end,
+    Path1 = pathencode(Path),
+    Url#hackney_url{host=Host, netloc=Netloc, path=Path1}.
 
 transport_scheme(hackney_tcp_transport) ->
     http;
@@ -99,7 +135,7 @@ unparse_url(#hackney_url{}=Url) ->
         _ -> Path
     end,
 
-    iolist_to_binary([Scheme1, Netloc1, Path1, Qs1, Fragment1]).
+    << Scheme1/binary, Netloc1/binary, Path1/binary, Qs1/binary, Fragment1/binary >>.
 
 %% @private
 parse_addr(Addr, S) ->
@@ -136,11 +172,13 @@ parse_netloc(<<"[", Rest/binary>>, #hackney_url{transport=Transport}=S) ->
 parse_netloc(Netloc, #hackney_url{transport=Transport}=S) ->
     case binary:split(Netloc, <<":">>) of
         [Host] when Transport =:= hackney_tcp_transport ->
-            S#hackney_url{host=binary_to_list(Host), port=80};
+            S#hackney_url{host=unicode:characters_to_list((Host)),
+                          port=80};
         [Host] when Transport =:= hackney_ssl_transport ->
-            S#hackney_url{host=binary_to_list(Host), port=443};
+            S#hackney_url{host=unicode:characters_to_list(Host),
+                          port=443};
         [Host, Port] ->
-            S#hackney_url{host=binary_to_list(Host),
+            S#hackney_url{host=unicode:characters_to_list(Host),
                           port=list_to_integer(binary_to_list(Port))}
     end.
 
@@ -300,7 +338,7 @@ make_url(Url, PathParts, Query) when is_binary(Query) ->
 
 fix_path(Path) when is_list(Path) ->
     fix_path(list_to_binary(Path));
-fix_path(<<>>) -> 
+fix_path(<<>>) ->
     <<>>;
 fix_path(<<"/", Path/binary>>) ->
     fix_path(Path);
@@ -309,9 +347,6 @@ fix_path(Path) ->
         <<"/">> -> binary:part(Path, {0, size(Path) - 1});
         _ -> Path
     end.
-
-
-
 
 %% @doc encode a URL path
 %% @equiv pathencode(Bin, [])

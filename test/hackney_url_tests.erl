@@ -261,4 +261,22 @@ pathencode_test_() ->
             ],
     [{V, fun() -> R = hackney_url:pathencode(V) end} || {V, R} <- Tests].
 
+normalize_test_() ->
+    Tests = [
+        {"http://www.%E3%81%BB%E3%82%93%E3%81%A8%E3%81%86%E3%81%AB%E3%81%AA" ++
+         "%E3%81%8C%E3%81%84%E3%82%8F%E3%81%91%E3%81%AE%E3%82%8F%E3%81%8B%E3" ++
+         "%82%89%E3%81%AA%E3%81%84%E3%81%A9%E3%82%81%E3%81%84%E3%82%93%E3%82" ++
+         "%81%E3%81%84%E3%81%AE%E3%82%89%E3%81%B9%E3%82%8B%E3%81%BE%E3%81%A0" ++
+         "%E3%81%AA%E3%81%8C%E3%81%8F%E3%81%97%E3%81%AA%E3%81%84%E3%81%A8%E3" ++
+         "%81%9F%E3%82%8A%E3%81%AA%E3%81%84.w3.mag.keio.ac.jp",
+         << "http://www.xn--n8jaaaaai5bhf7as8fsfk3jnknefdde3f",
+           "g11amb5gzdb4wi9bya3kc6lra.w3.mag.keio.ac.jp/" >>}],
+    [{V, fun() -> R = hackney_url:unparse_url(hackney_url:normalize(V))
+            end} || {V, R} <- Tests].
 
+
+normalize2_test_() ->
+    Tests = [<<"http://www.詹姆斯.com/atomtests/iri/詹.html"/utf8>>,
+             <<"http://www.xn--8ws00zhy3a.com/atomtests/iri/%e8%a9%b9.html">>],
+    [{V, fun() -> R = hackney_url:unparse_url(hackney_url:normalize(V))
+            end} || {V, R} <- Tests].
