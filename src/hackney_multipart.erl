@@ -228,9 +228,9 @@ mp_file_header({file, Path, ExtraHeaders}, Boundary) ->
 mp_file_header({file, Path, {Disposition, Params}, ExtraHeaders}, Boundary) ->
     CType = hackney_mimetypes:filename(Path),
     Len = filelib:file_size(Path),
-    Headers = [{<<"Content-Disposition">>, Disposition, Params},
-               {<<"Content-Type">>, CType},
-               {<<"Content-Length">>, Len}] ++ ExtraHeaders,
+    Headers = mp_filter_file_header([{<<"Content-Type">>, CType},
+                                     {<<"Content-Length">>, Len}],
+                                    [{<<"Content-Disposition">>, Disposition, Params} | ExtraHeaders]),
     BinHeader = mp_header(Headers, Boundary),
     {BinHeader, Len}.
 
@@ -502,3 +502,13 @@ mp_parse_mixed1(eof, Pattern) ->
     {mp_mixed_eof, fun () -> parse_body(<<>>, Pattern) end};
 mp_parse_mixed1(Error, _Pattern) ->
     Error.
+
+mp_filter_file_header([], Acc) -> Acc;
+mp_filter_file_header([{Key, Value} | Headers], Acc) ->
+    case proplists:get_value(Key, Acc) of
+        undefined ->
+            mp_filter_file_header(Headers, [{Key, Value} | Acc]);
+        _Else ->
+            mp_filter_file_header(Headers, Acc)
+    end.
+
