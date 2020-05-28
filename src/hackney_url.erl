@@ -25,7 +25,7 @@
 
 -include("hackney_lib.hrl").
 
--type qs_vals() :: [{binary(), binary() | true}].
+-type qs_vals() :: [{binary() | atom() | list() | integer(), binary() | true}].
 
 %% @doc Parse an url and return a #hackney_url record.
 -spec parse_url(URL::binary()|list()) -> hackney_url().
